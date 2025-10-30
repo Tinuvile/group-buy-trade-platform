@@ -37,19 +37,19 @@ public class GroupBuyActivity {
     private String discountId;
 
     /* 拼团方式（0自动成团、1达成目标拼团） */
-    private String groupType;
+    private Integer groupType;
 
     /* 拼团次数限制 */
-    private String takeLimitCount;
+    private Integer takeLimitCount;
 
     /* 拼团目标 */
-    private String target;
+    private Integer target;
 
     /* 拼团时长（分钟） */
-    private String validTime;
+    private Integer validTime;
 
     /* 活动状态（0创建、1生效、2过期、3废弃） */
-    private String status;
+    private Integer status;
 
     /* 活动开始时间 */
     private String startTime;
