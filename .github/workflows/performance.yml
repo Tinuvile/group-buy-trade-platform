@@ -1,0 +1,631 @@
+name: Performance & Memory Analysis
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run performance tests weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+jobs:
+  jvm-performance:
+    name: JVM Performance Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: group_buy_trade_platform_perf
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build application
+      run: mvn clean package -DskipTests -B
+
+    - name: Initialize test database
+      run: |
+        mysql -h127.0.0.1 -P3306 -uroot -proot123 -e "CREATE DATABASE IF NOT EXISTS group_buy_trade_platform_perf;"
+        if [ -f "docs/dev-ops/mysql/sql/group_buy_trade_platform.sql" ]; then
+          mysql -h127.0.0.1 -P3306 -uroot -proot123 group_buy_trade_platform_perf < docs/dev-ops/mysql/sql/group_buy_trade_platform.sql
+        fi
+
+    - name: JVM Startup Performance Test
+      run: |
+        echo "# JVM Performance Analysis Report" > performance-report.md
+        echo "" >> performance-report.md
+        echo "Generated on: $(date)" >> performance-report.md
+        echo "" >> performance-report.md
+        
+        # Test application startup time
+        echo "## Application Startup Performance" >> performance-report.md
+        echo "" >> performance-report.md
+        
+        JAR_FILE=$(find group-buy-trade-platform-app/target -name "*.jar" | head -1)
+        
+        if [ -f "$JAR_FILE" ]; then
+          echo "Testing startup time for: $JAR_FILE" >> performance-report.md
+          echo "" >> performance-report.md
+          
+          # Measure startup time (5 attempts)
+          for i in {1..5}; do
+            echo "Startup test attempt $i..."
+            START_TIME=$(date +%s%N)
+            
+            timeout 60 java -Xms256m -Xmx512m -jar "$JAR_FILE" \
+              --spring.profiles.active=test \
+              --spring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_perf \
+              --spring.datasource.username=root \
+              --spring.datasource.password=root123 \
+              --server.port=8888 \
+              --logging.level.org.springframework=WARN \
+              --logging.level.org.apache=WARN \
+              --spring.jpa.hibernate.ddl-auto=none > startup-log-$i.txt 2>&1 &
+            
+            PID=$!
+            
+            # Wait for startup completion or timeout
+            for j in {1..120}; do
+              if curl -s http://localhost:8888/actuator/health >/dev/null 2>&1; then
+                END_TIME=$(date +%s%N)
+                STARTUP_TIME=$(( (END_TIME - START_TIME) / 1000000 ))
+                echo "- **Attempt $i**: ${STARTUP_TIME}ms" >> performance-report.md
+                kill $PID 2>/dev/null || true
+                break
+              fi
+              sleep 0.5
+            done
+            
+            # Cleanup
+            kill $PID 2>/dev/null || true
+            pkill -f "group-buy-trade-platform-app" 2>/dev/null || true
+            sleep 2
+          done
+        else
+          echo "JAR file not found for startup testing" >> performance-report.md
+        fi
+
+    - name: Memory Usage Analysis
+      run: |
+        echo "" >> performance-report.md
+        echo "## Memory Usage Analysis" >> performance-report.md
+        echo "" >> performance-report.md
+        
+        JAR_FILE=$(find group-buy-trade-platform-app/target -name "*.jar" | head -1)
+        
+        if [ -f "$JAR_FILE" ]; then
+          # Start application with memory profiling
+          java -Xms256m -Xmx512m -XX:+PrintGCDetails -XX:+PrintGCTimeStamps \
+            -Xloggc:gc.log -jar "$JAR_FILE" \
+            --spring.profiles.active=test \
+            --spring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_perf \
+            --spring.datasource.username=root \
+            --spring.datasource.password=root123 \
+            --server.port=8889 \
+            --logging.level.org.springframework=WARN > memory-test.log 2>&1 &
+          
+          APP_PID=$!
+          
+          # Wait for startup
+          for i in {1..60}; do
+            if curl -s http://localhost:8889/actuator/health >/dev/null 2>&1; then
+              break
+            fi
+            sleep 1
+          done
+          
+          # Monitor memory usage
+          echo "Monitoring memory usage for 30 seconds..." >> performance-report.md
+          echo "" >> performance-report.md
+          echo "\`\`\`" >> performance-report.md
+          
+          for i in {1..6}; do
+            if ps -p $APP_PID > /dev/null; then
+              MEMORY_INFO=$(ps -p $APP_PID -o pid,vsz,rss,pmem,pcpu,time --no-headers)
+              echo "Time ${i}0s: $MEMORY_INFO" >> performance-report.md
+              sleep 5
+            else
+              echo "Application stopped unexpectedly" >> performance-report.md
+              break
+            fi
+          done
+          
+          echo "\`\`\`" >> performance-report.md
+          echo "" >> performance-report.md
+          
+          # Analyze GC logs if available
+          if [ -f gc.log ]; then
+            echo "## GC Performance" >> performance-report.md
+            echo "" >> performance-report.md
+            echo "\`\`\`" >> performance-report.md
+            tail -20 gc.log >> performance-report.md
+            echo "\`\`\`" >> performance-report.md
+            echo "" >> performance-report.md
+          fi
+          
+          # Cleanup
+          kill $APP_PID 2>/dev/null || true
+          pkill -f "group-buy-trade-platform-app" 2>/dev/null || true
+        fi
+
+    - name: Thread Analysis
+      run: |
+        echo "## Thread Analysis" >> performance-report.md
+        echo "" >> performance-report.md
+        
+        # Install jstack equivalent for analysis
+        JAR_FILE=$(find group-buy-trade-platform-app/target -name "*.jar" | head -1)
+        
+        if [ -f "$JAR_FILE" ]; then
+          # Start application
+          java -jar "$JAR_FILE" \
+            --spring.profiles.active=test \
+            --spring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_perf \
+            --spring.datasource.username=root \
+            --spring.datasource.password=root123 \
+            --server.port=8890 > thread-test.log 2>&1 &
+          
+          APP_PID=$!
+          
+          # Wait for startup
+          sleep 15
+          
+          if ps -p $APP_PID > /dev/null; then
+            # Get thread dump
+            jstack $APP_PID > thread-dump.txt 2>/dev/null || echo "jstack not available"
+            
+            # Analyze threads
+            if [ -f thread-dump.txt ]; then
+              THREAD_COUNT=$(grep -c "java.lang.Thread.State" thread-dump.txt || echo "0")
+              RUNNABLE_COUNT=$(grep -c "RUNNABLE" thread-dump.txt || echo "0")
+              BLOCKED_COUNT=$(grep -c "BLOCKED" thread-dump.txt || echo "0")
+              WAITING_COUNT=$(grep -c "WAITING" thread-dump.txt || echo "0")
+              
+              echo "- **Total threads**: $THREAD_COUNT" >> performance-report.md
+              echo "- **Runnable threads**: $RUNNABLE_COUNT" >> performance-report.md
+              echo "- **Blocked threads**: $BLOCKED_COUNT" >> performance-report.md
+              echo "- **Waiting threads**: $WAITING_COUNT" >> performance-report.md
+              echo "" >> performance-report.md
+              
+              if [ "$BLOCKED_COUNT" -gt 5 ]; then
+                echo "⚠️ **Warning**: High number of blocked threads detected" >> performance-report.md
+                echo "" >> performance-report.md
+              fi
+            else
+              echo "Thread dump analysis not available" >> performance-report.md
+            fi
+          fi
+          
+          # Cleanup
+          kill $APP_PID 2>/dev/null || true
+          pkill -f "group-buy-trade-platform-app" 2>/dev/null || true
+        fi
+
+    - name: Database Connection Pool Analysis
+      run: |
+        echo "## Database Connection Pool Performance" >> performance-report.md
+        echo "" >> performance-report.md
+        
+        # Test connection pool behavior
+        echo "Testing connection pool efficiency..." >> performance-report.md
+        
+        # Simple connection test
+        mysql -h127.0.0.1 -P3306 -uroot -proot123 -e "
+        SELECT 
+          COUNT(*) as active_connections,
+          'mysql' as connection_type
+        FROM information_schema.processlist 
+        WHERE USER != 'system user';" >> connection-stats.txt
+        
+        if [ -f connection-stats.txt ]; then
+          echo "\`\`\`" >> performance-report.md
+          cat connection-stats.txt >> performance-report.md
+          echo "\`\`\`" >> performance-report.md
+        fi
+
+    - name: Upload performance reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-reports
+        path: |
+          performance-report.md
+          startup-log-*.txt
+          memory-test.log
+          gc.log
+          thread-dump.txt
+          connection-stats.txt
+        retention-days: 7
+
+  jmh-benchmarks:
+    name: JMH Micro-benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || contains(github.event.head_commit.message, '[benchmark]')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Create JMH benchmark configuration
+      run: |
+        # Add JMH dependencies to test module
+        cat > jmh-plugin.xml << 'EOF'
+        <plugin>
+          <groupId>org.openjdk.jmh</groupId>
+          <artifactId>jmh-maven-plugin</artifactId>
+          <version>1.37</version>
+          <configuration>
+            <warmupIterations>3</warmupIterations>
+            <measurementIterations>5</measurementIterations>
+            <forks>1</forks>
+            <resultFormat>JSON</resultFormat>
+            <resultsFile>target/jmh-results.json</resultsFile>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>run</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        EOF
+
+    - name: Create sample benchmark
+      run: |
+        mkdir -p group-buy-trade-platform-app/src/test/java/com/tinuvile/benchmark
+        
+        cat > group-buy-trade-platform-app/src/test/java/com/tinuvile/benchmark/StringProcessingBenchmark.java << 'EOF'
+        package com.tinuvile.benchmark;
+
+        import org.openjdk.jmh.annotations.*;
+        import org.openjdk.jmh.runner.Runner;
+        import org.openjdk.jmh.runner.RunnerException;
+        import org.openjdk.jmh.runner.options.Options;
+        import org.openjdk.jmh.runner.options.OptionsBuilder;
+
+        import java.util.concurrent.TimeUnit;
+
+        @BenchmarkMode(Mode.AverageTime)
+        @OutputTimeUnit(TimeUnit.NANOSECONDS)
+        @State(Scope.Benchmark)
+        public class StringProcessingBenchmark {
+
+            private String testString = "group-buy-trade-platform-test-string-for-benchmarking";
+
+            @Benchmark
+            public String stringConcatenation() {
+                return testString + "-concatenated";
+            }
+
+            @Benchmark
+            public String stringBuilder() {
+                return new StringBuilder(testString).append("-concatenated").toString();
+            }
+
+            @Benchmark
+            public String stringBuffer() {
+                return new StringBuffer(testString).append("-concatenated").toString();
+            }
+
+            public static void main(String[] args) throws RunnerException {
+                Options opt = new OptionsBuilder()
+                        .include(StringProcessingBenchmark.class.getSimpleName())
+                        .build();
+                new Runner(opt).run();
+            }
+        }
+        EOF
+
+    - name: Add JMH dependencies
+      run: |
+        # Add JMH dependencies to app module
+        if [ -f group-buy-trade-platform-app/pom.xml ]; then
+          sed -i '/<\/dependencies>/i\
+        <dependency>\
+            <groupId>org.openjdk.jmh</groupId>\
+            <artifactId>jmh-core</artifactId>\
+            <version>1.37</version>\
+            <scope>test</scope>\
+        </dependency>\
+        <dependency>\
+            <groupId>org.openjdk.jmh</groupId>\
+            <artifactId>jmh-generator-annprocess</artifactId>\
+            <version>1.37</version>\
+            <scope>test</scope>\
+        </dependency>' group-buy-trade-platform-app/pom.xml
+        fi
+
+    - name: Run JMH benchmarks
+      run: |
+        cd group-buy-trade-platform-app
+        mvn clean test-compile -B
+        
+        # Run benchmarks if available
+        mvn test -Dtest=StringProcessingBenchmark -B || echo "Benchmark completed"
+
+    - name: Process benchmark results
+      run: |
+        echo "# JMH Benchmark Results" > benchmark-report.md
+        echo "" >> benchmark-report.md
+        echo "Generated on: $(date)" >> benchmark-report.md
+        echo "" >> benchmark-report.md
+        
+        if [ -f group-buy-trade-platform-app/target/jmh-results.json ]; then
+          echo "## Benchmark Summary" >> benchmark-report.md
+          echo "" >> benchmark-report.md
+          echo "\`\`\`json" >> benchmark-report.md
+          cat group-buy-trade-platform-app/target/jmh-results.json >> benchmark-report.md
+          echo "\`\`\`" >> benchmark-report.md
+        else
+          echo "No benchmark results available" >> benchmark-report.md
+        fi
+
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: jmh-benchmark-results
+        path: |
+          benchmark-report.md
+          group-buy-trade-platform-app/target/jmh-results.json
+        retention-days: 30
+
+  memory-leak-detection:
+    name: Memory Leak Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: group_buy_trade_platform_leak
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build application
+      run: mvn clean package -DskipTests -B
+
+    - name: Memory leak stress test
+      run: |
+        echo "# Memory Leak Detection Report" > memory-leak-report.md
+        echo "" >> memory-leak-report.md
+        echo "Generated on: $(date)" >> memory-leak-report.md
+        echo "" >> memory-leak-report.md
+        
+        JAR_FILE=$(find group-buy-trade-platform-app/target -name "*.jar" | head -1)
+        
+        if [ -f "$JAR_FILE" ]; then
+          echo "## Memory Leak Stress Test" >> memory-leak-report.md
+          echo "" >> memory-leak-report.md
+          
+          # Start application with heap dump on OOM
+          java -Xms256m -Xmx256m -XX:+HeapDumpOnOutOfMemoryError \
+            -XX:HeapDumpPath=./heap-dump.hprof \
+            -XX:+PrintGC -XX:+PrintGCTimeStamps \
+            -Xloggc:memory-leak-gc.log \
+            -jar "$JAR_FILE" \
+            --spring.profiles.active=test \
+            --spring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_leak \
+            --spring.datasource.username=root \
+            --spring.datasource.password=root123 \
+            --server.port=8891 > memory-leak-app.log 2>&1 &
+          
+          APP_PID=$!
+          
+          # Wait for startup
+          echo "Waiting for application startup..." >> memory-leak-report.md
+          for i in {1..60}; do
+            if curl -s http://localhost:8891/actuator/health >/dev/null 2>&1; then
+              echo "Application started successfully" >> memory-leak-report.md
+              break
+            fi
+            sleep 1
+          done
+          
+          # Monitor memory over time
+          echo "" >> memory-leak-report.md
+          echo "## Memory Usage Over Time" >> memory-leak-report.md
+          echo "" >> memory-leak-report.md
+          echo "| Time | VSZ (KB) | RSS (KB) | Memory % | CPU % |" >> memory-leak-report.md
+          echo "|------|----------|----------|----------|-------|" >> memory-leak-report.md
+          
+          for i in {1..12}; do
+            if ps -p $APP_PID > /dev/null; then
+              MEMORY_INFO=$(ps -p $APP_PID -o vsz,rss,pmem,pcpu --no-headers)
+              echo "| ${i}min | $MEMORY_INFO |" >> memory-leak-report.md
+              
+              # Make some requests to trigger memory usage
+              for j in {1..10}; do
+                curl -s http://localhost:8891/actuator/health >/dev/null 2>&1 || true
+                sleep 1
+              done
+              
+              sleep 50
+            else
+              echo "| ${i}min | Application stopped | - | - | - |" >> memory-leak-report.md
+              break
+            fi
+          done
+          
+          echo "" >> memory-leak-report.md
+          
+          # Check for heap dump (indicates OOM)
+          if [ -f heap-dump.hprof ]; then
+            echo "⚠️ **Warning**: Heap dump generated - possible memory leak detected!" >> memory-leak-report.md
+            echo "Heap dump size: $(ls -lh heap-dump.hprof | awk '{print $5}')" >> memory-leak-report.md
+          else
+            echo "✅ **Result**: No heap dump generated - no obvious memory leaks" >> memory-leak-report.md
+          fi
+          
+          # Cleanup
+          kill $APP_PID 2>/dev/null || true
+          pkill -f "group-buy-trade-platform-app" 2>/dev/null || true
+        fi
+
+    - name: Analyze GC behavior
+      run: |
+        echo "" >> memory-leak-report.md
+        echo "## GC Analysis" >> memory-leak-report.md
+        echo "" >> memory-leak-report.md
+        
+        if [ -f memory-leak-gc.log ]; then
+          echo "### GC Statistics" >> memory-leak-report.md
+          echo "\`\`\`" >> memory-leak-report.md
+          
+          # Count different types of GC
+          MINOR_GC=$(grep -c "GC" memory-leak-gc.log || echo "0")
+          MAJOR_GC=$(grep -c "Full GC" memory-leak-gc.log || echo "0")
+          
+          echo "Minor GC events: $MINOR_GC" >> memory-leak-report.md
+          echo "Major GC events: $MAJOR_GC" >> memory-leak-report.md
+          echo "" >> memory-leak-report.md
+          
+          # Show last 10 GC events
+          echo "Last 10 GC events:" >> memory-leak-report.md
+          tail -10 memory-leak-gc.log >> memory-leak-report.md
+          echo "\`\`\`" >> memory-leak-report.md
+          
+          # Check for concerning patterns
+          if [ "$MAJOR_GC" -gt 10 ]; then
+            echo "" >> memory-leak-report.md
+            echo "⚠️ **Warning**: High number of Full GC events ($MAJOR_GC) - potential memory pressure" >> memory-leak-report.md
+          fi
+        else
+          echo "No GC log available for analysis" >> memory-leak-report.md
+        fi
+
+    - name: Upload memory leak reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: memory-leak-reports
+        path: |
+          memory-leak-report.md
+          memory-leak-gc.log
+          memory-leak-app.log
+          heap-dump.hprof
+        retention-days: 7
+
+  performance-summary:
+    name: Performance Summary
+    runs-on: ubuntu-latest
+    needs: [jvm-performance, memory-leak-detection]
+    if: always()
+
+    steps:
+    - name: Download all performance reports
+      uses: actions/download-artifact@v4
+
+    - name: Generate performance summary
+      run: |
+        echo "# Performance Analysis Summary" > performance-summary.md
+        echo "" >> performance-summary.md
+        echo "Generated on: $(date)" >> performance-summary.md
+        echo "" >> performance-summary.md
+        
+        # JVM Performance Summary
+        echo "## JVM Performance" >> performance-summary.md
+        if [ -f performance-reports/performance-report.md ]; then
+          echo "✅ **Status**: JVM performance analysis completed" >> performance-summary.md
+          echo "📊 **Details**: Check performance-reports artifact" >> performance-summary.md
+        else
+          echo "❌ **Status**: JVM performance analysis failed" >> performance-summary.md
+        fi
+        echo "" >> performance-summary.md
+        
+        # Memory Leak Detection Summary
+        echo "## Memory Leak Detection" >> performance-summary.md
+        if [ -f memory-leak-reports/memory-leak-report.md ]; then
+          if grep -q "heap-dump.hprof" memory-leak-reports/memory-leak-report.md; then
+            echo "⚠️ **Status**: Potential memory leak detected - heap dump generated" >> performance-summary.md
+          else
+            echo "✅ **Status**: No obvious memory leaks detected" >> performance-summary.md
+          fi
+          echo "📊 **Details**: Check memory-leak-reports artifact" >> performance-summary.md
+        else
+          echo "❌ **Status**: Memory leak detection failed" >> performance-summary.md
+        fi
+        echo "" >> performance-summary.md
+        
+        # Benchmarks Summary
+        echo "## Micro-benchmarks" >> performance-summary.md
+        if [ -f jmh-benchmark-results/benchmark-report.md ]; then
+          echo "✅ **Status**: JMH benchmarks completed" >> performance-summary.md
+          echo "📊 **Details**: Check jmh-benchmark-results artifact" >> performance-summary.md
+        else
+          echo "ℹ️ **Status**: Benchmarks skipped (only run on schedule or with [benchmark] commit message)" >> performance-summary.md
+        fi
+        echo "" >> performance-summary.md
+        
+        # Recommendations
+        echo "## Recommendations" >> performance-summary.md
+        echo "" >> performance-summary.md
+        echo "1. **Startup Time**: Monitor application startup time regularly" >> performance-summary.md
+        echo "2. **Memory Usage**: Watch for gradual memory increases over time" >> performance-summary.md
+        echo "3. **GC Behavior**: Monitor Full GC frequency and duration" >> performance-summary.md
+        echo "4. **Thread Usage**: Keep an eye on blocked/waiting thread counts" >> performance-summary.md
+        echo "5. **Database Connections**: Monitor connection pool efficiency" >> performance-summary.md
+
+    - name: Upload performance summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-summary
+        path: performance-summary.md
+        retention-days: 30

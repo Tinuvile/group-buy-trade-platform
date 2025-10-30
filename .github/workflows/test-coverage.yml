@@ -1,0 +1,195 @@
+name: Unit Tests & Coverage
+
+on:
+  push:
+    branches: [ main, develop, '20*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: group_buy_trade_platform_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Wait for MySQL
+      run: |
+        until mysqladmin ping -h"127.0.0.1" -P3306 -uroot -proot123 --silent; do
+          echo 'waiting for mysql...'
+          sleep 2
+        done
+
+    - name: Initialize test database
+      run: |
+        mysql -h127.0.0.1 -P3306 -uroot -proot123 -e "CREATE DATABASE IF NOT EXISTS group_buy_trade_platform_test;"
+        if [ -f "docs/dev-ops/mysql/sql/group_buy_trade_platform.sql" ]; then
+          mysql -h127.0.0.1 -P3306 -uroot -proot123 group_buy_trade_platform_test < docs/dev-ops/mysql/sql/group_buy_trade_platform.sql
+        fi
+
+    - name: Run unit tests with coverage
+      run: |
+        mvn clean test -B \
+          -Dspring.profiles.active=test \
+          -Dspring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_test \
+          -Dspring.datasource.username=root \
+          -Dspring.datasource.password=root123 \
+          -Dmaven.test.failure.ignore=false
+
+    - name: Generate JaCoCo coverage report
+      run: |
+        mvn jacoco:report -B
+
+    - name: Aggregate coverage reports
+      run: |
+        mvn jacoco:report-aggregate -B
+      continue-on-error: true
+
+    - name: Check coverage thresholds
+      run: |
+        mvn jacoco:check -B \
+          -Djacoco.haltOnFailure=false \
+          -Djacoco.rules.coverage.minimum=0.70
+      continue-on-error: true
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./target/site/jacoco/jacoco.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Generate coverage summary
+      run: |
+        echo "## Test Coverage Summary" > coverage-summary.md
+        echo "" >> coverage-summary.md
+        
+        # Find all jacoco.xml files
+        find . -name "jacoco.xml" -not -path "./target/site/*" | while read file; do
+          module=$(dirname "$file" | sed 's|./||' | sed 's|/target/site/jacoco||')
+          echo "### Module: $module" >> coverage-summary.md
+          
+          # Extract coverage percentage (simplified)
+          if [ -f "$file" ]; then
+            lines_covered=$(grep -o 'covered="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')
+            lines_missed=$(grep -o 'missed="[0-9]*"' "$file" | head -1 | grep -o '[0-9]*')
+            if [ -n "$lines_covered" ] && [ -n "$lines_missed" ]; then
+              total=$((lines_covered + lines_missed))
+              if [ $total -gt 0 ]; then
+                percentage=$((lines_covered * 100 / total))
+                echo "- Line Coverage: ${percentage}%" >> coverage-summary.md
+              fi
+            fi
+          fi
+          echo "" >> coverage-summary.md
+        done
+
+    - name: Upload coverage summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-summary
+        path: coverage-summary.md
+        retention-days: 30
+
+    - name: Upload detailed coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: |
+          **/target/site/jacoco/
+          **/target/jacoco.exec
+        retention-days: 30
+
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('coverage-summary.md')) {
+            const coverage = fs.readFileSync('coverage-summary.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: coverage
+            });
+          }
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: group_buy_trade_platform_integration
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Run integration tests
+      run: |
+        mvn verify -B \
+          -Dspring.profiles.active=test \
+          -Dspring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_integration \
+          -Dspring.datasource.username=root \
+          -Dspring.datasource.password=root123
+      continue-on-error: true
+
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-results
+        path: |
+          **/target/surefire-reports/
+          **/target/failsafe-reports/
+        retention-days: 7

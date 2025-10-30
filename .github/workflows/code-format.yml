@@ -1,0 +1,351 @@
+name: Java Code Format Check
+
+on:
+  push:
+    branches: [ main, develop, '20*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  format-check:
+    name: Code Format Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Check Google Java Format
+      run: |
+        # Download Google Java Format
+        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar
+        
+        # Find all Java files
+        find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" > java-files.txt
+        
+        # Check format
+        if [ -s java-files.txt ]; then
+          echo "Checking Java code format..."
+          java -jar google-java-format.jar --dry-run --set-exit-if-changed $(cat java-files.txt) || {
+            echo "❌ Code format issues found!"
+            echo "Files that need formatting:"
+            java -jar google-java-format.jar --dry-run --set-exit-if-changed $(cat java-files.txt) 2>&1 | grep -E "\.java" || true
+            exit 1
+          }
+          echo "✅ All Java files are properly formatted"
+        else
+          echo "No Java files found to check"
+        fi
+
+    - name: Generate format report
+      if: failure()
+      run: |
+        echo "# Code Format Issues Report" > format-report.md
+        echo "" >> format-report.md
+        echo "The following files have formatting issues:" >> format-report.md
+        echo "" >> format-report.md
+        
+        find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" | while read file; do
+          if ! java -jar google-java-format.jar --dry-run --set-exit-if-changed "$file" >/dev/null 2>&1; then
+            echo "- \`$file\`" >> format-report.md
+          fi
+        done
+        
+        echo "" >> format-report.md
+        echo "## How to fix:" >> format-report.md
+        echo "1. Run the auto-format workflow or" >> format-report.md
+        echo "2. Use your IDE's format feature or" >> format-report.md
+        echo "3. Run: \`mvn spotless:apply\`" >> format-report.md
+
+    - name: Upload format report
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: format-issues-report
+        path: format-report.md
+        retention-days: 7
+
+  spotless-check:
+    name: Spotless Format Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Add Spotless plugin to parent POM
+      run: |
+        # Create a temporary POM with Spotless configuration
+        cat > spotless-config.xml << 'EOF'
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>2.43.0</version>
+          <configuration>
+            <java>
+              <includes>
+                <include>src/main/java/**/*.java</include>
+                <include>src/test/java/**/*.java</include>
+              </includes>
+              <googleJavaFormat>
+                <version>1.19.2</version>
+                <style>GOOGLE</style>
+              </googleJavaFormat>
+              <removeUnusedImports/>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+            </java>
+            <pom>
+              <includes>
+                <include>pom.xml</include>
+                <include>*/pom.xml</include>
+              </includes>
+              <sortPom>
+                <encoding>UTF-8</encoding>
+                <lineSeparator>\n</lineSeparator>
+                <expandEmptyElements>true</expandEmptyElements>
+                <spaceBeforeCloseEmptyElement>false</spaceBeforeCloseEmptyElement>
+                <keepBlankLines>true</keepBlankLines>
+                <nrOfIndentSpace>4</nrOfIndentSpace>
+              </sortPom>
+            </pom>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        EOF
+
+    - name: Check with Spotless
+      run: |
+        # Add the plugin to parent POM temporarily for checking
+        if [ -f pom.xml ]; then
+          # Insert plugin before closing </plugins> tag
+          sed -i '/<\/plugins>/i\
+        '"$(cat spotless-config.xml | sed 's/$/\\/' | tr -d '\n' | sed 's/\\$//')" pom.xml
+          
+          # Run spotless check
+          mvn spotless:check -B || {
+            echo "❌ Spotless format check failed!"
+            echo "Run 'mvn spotless:apply' to fix formatting issues"
+            exit 1
+          }
+          echo "✅ Spotless format check passed"
+        fi
+      continue-on-error: true
+
+  auto-format:
+    name: Auto Format (Create PR)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, '[auto-format]')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Format code with Google Java Format
+      run: |
+        # Download Google Java Format
+        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar
+        
+        # Format all Java files
+        find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" -exec java -jar google-java-format.jar --replace {} \;
+
+    - name: Check for changes
+      id: changes
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changes=true" >> $GITHUB_OUTPUT
+        else
+          echo "changes=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create Pull Request
+      if: steps.changes.outputs.changes == 'true'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'style: auto-format Java code with Google Java Format'
+        title: '🎨 Auto-format Java code'
+        body: |
+          ## Auto-formatting applied
+          
+          This PR was automatically created to apply code formatting using Google Java Format.
+          
+          ### Changes:
+          - Applied Google Java Format to all Java files
+          - Removed unused imports where applicable
+          - Fixed indentation and spacing
+          
+          Please review and merge if the formatting looks correct.
+        branch: auto-format/java-code
+        delete-branch: true
+
+  checkstyle:
+    name: CheckStyle Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Create CheckStyle configuration
+      run: |
+        mkdir -p .github/checkstyle
+        cat > .github/checkstyle/checkstyle.xml << 'EOF'
+        <?xml version="1.0"?>
+        <!DOCTYPE module PUBLIC
+          "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+          "https://checkstyle.org/dtds/configuration_1_3.dtd">
+        <module name="Checker">
+          <property name="charset" value="UTF-8"/>
+          <property name="severity" value="warning"/>
+          <property name="fileExtensions" value="java, properties, xml"/>
+          
+          <module name="TreeWalker">
+            <!-- Naming Conventions -->
+            <module name="ConstantName"/>
+            <module name="LocalFinalVariableName"/>
+            <module name="LocalVariableName"/>
+            <module name="MemberName"/>
+            <module name="MethodName"/>
+            <module name="PackageName"/>
+            <module name="ParameterName"/>
+            <module name="StaticVariableName"/>
+            <module name="TypeName"/>
+            
+            <!-- Imports -->
+            <module name="AvoidStarImport"/>
+            <module name="IllegalImport"/>
+            <module name="RedundantImport"/>
+            <module name="UnusedImports"/>
+            
+            <!-- Size Violations -->
+            <module name="LineLength">
+              <property name="max" value="120"/>
+            </module>
+            <module name="MethodLength"/>
+            <module name="ParameterNumber"/>
+            
+            <!-- Whitespace -->
+            <module name="EmptyForIteratorPad"/>
+            <module name="GenericWhitespace"/>
+            <module name="MethodParamPad"/>
+            <module name="NoWhitespaceAfter"/>
+            <module name="NoWhitespaceBefore"/>
+            <module name="ParenPad"/>
+            <module name="TypecastParenPad"/>
+            <module name="WhitespaceAfter"/>
+            <module name="WhitespaceAround"/>
+            
+            <!-- Modifiers -->
+            <module name="ModifierOrder"/>
+            <module name="RedundantModifier"/>
+            
+            <!-- Blocks -->
+            <module name="AvoidNestedBlocks"/>
+            <module name="EmptyBlock"/>
+            <module name="LeftCurly"/>
+            <module name="NeedBraces"/>
+            <module name="RightCurly"/>
+            
+            <!-- Common Coding Problems -->
+            <module name="EmptyStatement"/>
+            <module name="EqualsHashCode"/>
+            <module name="IllegalInstantiation"/>
+            <module name="InnerAssignment"/>
+            <module name="MissingSwitchDefault"/>
+            <module name="SimplifyBooleanExpression"/>
+            <module name="SimplifyBooleanReturn"/>
+            
+            <!-- Class Design -->
+            <module name="FinalClass"/>
+            <module name="HideUtilityClassConstructor"/>
+            <module name="InterfaceIsType"/>
+            <module name="VisibilityModifier"/>
+            
+            <!-- Miscellaneous -->
+            <module name="ArrayTypeStyle"/>
+            <module name="FinalParameters"/>
+            <module name="TodoComment"/>
+            <module name="UpperEll"/>
+          </module>
+        </module>
+        EOF
+
+    - name: Run CheckStyle
+      run: |
+        # Download CheckStyle
+        wget -O checkstyle.jar https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar
+        
+        # Run CheckStyle on all Java files
+        find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" > java-files.txt
+        
+        if [ -s java-files.txt ]; then
+          echo "Running CheckStyle validation..."
+          java -jar checkstyle.jar -c .github/checkstyle/checkstyle.xml $(cat java-files.txt) | tee checkstyle-report.txt
+          
+          # Check if there are any violations
+          if grep -q "\[ERROR\]" checkstyle-report.txt; then
+            echo "❌ CheckStyle violations found!"
+            exit 1
+          else
+            echo "✅ CheckStyle validation passed"
+          fi
+        else
+          echo "No Java files found to check"
+        fi
+
+    - name: Upload CheckStyle report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: checkstyle-report
+        path: |
+          checkstyle-report.txt
+          .github/checkstyle/checkstyle.xml
+        retention-days: 7

@@ -1,0 +1,559 @@
+name: Docker Image Security & Quality Check
+
+on:
+  push:
+    branches: [ main, develop, '20*' ]
+    paths:
+      - 'group-buy-trade-platform-app/Dockerfile'
+      - 'group-buy-trade-platform-app/**'
+      - 'docs/dev-ops/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'group-buy-trade-platform-app/Dockerfile'
+      - 'group-buy-trade-platform-app/**'
+      - 'docs/dev-ops/**'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/group-buy-trade-platform
+
+jobs:
+  dockerfile-analysis:
+    name: Dockerfile Analysis
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Analyze Dockerfile with Hadolint
+      uses: hadolint/hadolint-action@v3.1.0
+      with:
+        dockerfile: group-buy-trade-platform-app/Dockerfile
+        format: json
+        output-file: hadolint-report.json
+        no-fail: true
+
+    - name: Process Hadolint results
+      run: |
+        echo "# Dockerfile Analysis Report" > dockerfile-report.md
+        echo "" >> dockerfile-report.md
+        echo "Generated on: $(date)" >> dockerfile-report.md
+        echo "" >> dockerfile-report.md
+        
+        if [ -s hadolint-report.json ]; then
+          echo "## Hadolint Issues Found" >> dockerfile-report.md
+          echo "" >> dockerfile-report.md
+          
+          # Count issues by severity
+          ERROR_COUNT=$(jq '[.[] | select(.level == "error")] | length' hadolint-report.json)
+          WARNING_COUNT=$(jq '[.[] | select(.level == "warning")] | length' hadolint-report.json)
+          INFO_COUNT=$(jq '[.[] | select(.level == "info")] | length' hadolint-report.json)
+          
+          echo "- **Errors**: $ERROR_COUNT" >> dockerfile-report.md
+          echo "- **Warnings**: $WARNING_COUNT" >> dockerfile-report.md
+          echo "- **Info**: $INFO_COUNT" >> dockerfile-report.md
+          echo "" >> dockerfile-report.md
+          
+          # Show detailed issues
+          if [ "$ERROR_COUNT" -gt 0 ]; then
+            echo "### Errors (Must Fix)" >> dockerfile-report.md
+            echo "" >> dockerfile-report.md
+            jq -r '.[] | select(.level == "error") | "- **" + .code + "** (Line " + (.line | tostring) + "): " + .message' hadolint-report.json >> dockerfile-report.md
+            echo "" >> dockerfile-report.md
+          fi
+          
+          if [ "$WARNING_COUNT" -gt 0 ]; then
+            echo "### Warnings (Should Fix)" >> dockerfile-report.md
+            echo "" >> dockerfile-report.md
+            jq -r '.[] | select(.level == "warning") | "- **" + .code + "** (Line " + (.line | tostring) + "): " + .message' hadolint-report.json >> dockerfile-report.md
+            echo "" >> dockerfile-report.md
+          fi
+          
+          # Fail if there are errors
+          if [ "$ERROR_COUNT" -gt 0 ]; then
+            echo "❌ Dockerfile has critical issues that must be fixed"
+            exit 1
+          elif [ "$WARNING_COUNT" -gt 5 ]; then
+            echo "⚠️ Dockerfile has many warnings ($WARNING_COUNT > 5)"
+            exit 1
+          else
+            echo "✅ Dockerfile analysis passed"
+          fi
+        else
+          echo "✅ **Result**: No Dockerfile issues found" >> dockerfile-report.md
+        fi
+
+    - name: Upload Dockerfile analysis report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dockerfile-analysis
+        path: |
+          dockerfile-report.md
+          hadolint-report.json
+        retention-days: 7
+
+  docker-build-test:
+    name: Docker Build & Test
+    runs-on: ubuntu-latest
+    needs: dockerfile-analysis
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build application
+      run: mvn clean package -DskipTests -B
+
+    - name: Test Docker build
+      run: |
+        echo "# Docker Build Test Report" > docker-build-report.md
+        echo "" >> docker-build-report.md
+        echo "Generated on: $(date)" >> docker-build-report.md
+        echo "" >> docker-build-report.md
+        
+        cd group-buy-trade-platform-app
+        
+        # Build Docker image
+        echo "## Docker Build Process" >> ../docker-build-report.md
+        echo "" >> ../docker-build-report.md
+        
+        START_TIME=$(date +%s)
+        
+        docker build -t group-buy-trade-platform:test . > ../docker-build.log 2>&1
+        BUILD_RESULT=$?
+        
+        END_TIME=$(date +%s)
+        BUILD_TIME=$((END_TIME - START_TIME))
+        
+        echo "- **Build Status**: $([ $BUILD_RESULT -eq 0 ] && echo "✅ Success" || echo "❌ Failed")" >> ../docker-build-report.md
+        echo "- **Build Time**: ${BUILD_TIME}s" >> ../docker-build-report.md
+        echo "" >> ../docker-build-report.md
+        
+        if [ $BUILD_RESULT -ne 0 ]; then
+          echo "### Build Errors" >> ../docker-build-report.md
+          echo "\`\`\`" >> ../docker-build-report.md
+          tail -20 ../docker-build.log >> ../docker-build-report.md
+          echo "\`\`\`" >> ../docker-build-report.md
+          exit 1
+        fi
+
+    - name: Analyze Docker image
+      run: |
+        echo "## Docker Image Analysis" >> docker-build-report.md
+        echo "" >> docker-build-report.md
+        
+        # Get image info
+        IMAGE_SIZE=$(docker images group-buy-trade-platform:test --format "table {{.Size}}" | tail -1)
+        IMAGE_ID=$(docker images group-buy-trade-platform:test --format "table {{.ID}}" | tail -1)
+        
+        echo "- **Image ID**: $IMAGE_ID" >> docker-build-report.md
+        echo "- **Image Size**: $IMAGE_SIZE" >> docker-build-report.md
+        echo "" >> docker-build-report.md
+        
+        # Inspect image layers
+        echo "### Image Layers" >> docker-build-report.md
+        echo "\`\`\`" >> docker-build-report.md
+        docker history group-buy-trade-platform:test --no-trunc >> docker-build-report.md
+        echo "\`\`\`" >> docker-build-report.md
+        echo "" >> docker-build-report.md
+        
+        # Check for common issues
+        echo "### Image Health Check" >> docker-build-report.md
+        echo "" >> docker-build-report.md
+        
+        # Check if image size is reasonable (warn if > 500MB)
+        SIZE_MB=$(docker images group-buy-trade-platform:test --format "table {{.Size}}" | tail -1 | sed 's/MB//' | cut -d'.' -f1)
+        if [ "$SIZE_MB" -gt 500 ] 2>/dev/null; then
+          echo "⚠️ **Warning**: Large image size (${IMAGE_SIZE}). Consider optimizing." >> docker-build-report.md
+        else
+          echo "✅ **Image Size**: Acceptable (${IMAGE_SIZE})" >> docker-build-report.md
+        fi
+        
+        # Check if running as root
+        USER_INFO=$(docker run --rm group-buy-trade-platform:test whoami 2>/dev/null || echo "unknown")
+        if [ "$USER_INFO" = "root" ]; then
+          echo "⚠️ **Security**: Container runs as root user" >> docker-build-report.md
+        else
+          echo "✅ **Security**: Container runs as non-root user ($USER_INFO)" >> docker-build-report.md
+        fi
+
+    - name: Test container functionality
+      run: |
+        echo "" >> docker-build-report.md
+        echo "## Container Functionality Test" >> docker-build-report.md
+        echo "" >> docker-build-report.md
+        
+         # Start container for testing
+         docker run -d --name test-container \
+           -p 8091:8091 \
+           -e SPRING_PROFILES_ACTIVE=test \
+           group-buy-trade-platform:test > container-start.log 2>&1
+        
+        CONTAINER_ID=$(docker ps -q -f name=test-container)
+        
+        if [ -n "$CONTAINER_ID" ]; then
+          echo "- **Container Start**: ✅ Success" >> docker-build-report.md
+          
+           # Wait for application to start
+           echo "Waiting for application to start..." >> docker-build-report.md
+           for i in {1..30}; do
+             # Check if application is responding (try multiple endpoints)
+             if curl -s -f http://localhost:8091/health >/dev/null 2>&1 || \
+                curl -s -f http://localhost:8091/ >/dev/null 2>&1 || \
+                curl -s -o /dev/null -w "%{http_code}" http://localhost:8091/ | grep -q "200\|404\|405"; then
+               echo "- **Health Check**: ✅ Application responding" >> docker-build-report.md
+               break
+             fi
+             sleep 2
+           done
+           
+           # Test basic endpoints - try different approaches
+           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8091/ 2>/dev/null || echo "000")
+           if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "404" ] || [ "$HTTP_CODE" = "405" ]; then
+             echo "- **Health Endpoint**: ✅ Application responding (HTTP $HTTP_CODE)" >> docker-build-report.md
+           else
+             echo "- **Health Endpoint**: ⚠️ No response or error (HTTP $HTTP_CODE)" >> docker-build-report.md
+           fi
+          
+          # Check container logs for errors
+          docker logs test-container > container-logs.txt 2>&1
+          if grep -qi "error\|exception\|failed" container-logs.txt; then
+            echo "- **Container Logs**: ⚠️ Errors detected in logs" >> docker-build-report.md
+            echo "" >> docker-build-report.md
+            echo "### Recent Errors" >> docker-build-report.md
+            echo "\`\`\`" >> docker-build-report.md
+            grep -i "error\|exception\|failed" container-logs.txt | tail -5 >> docker-build-report.md
+            echo "\`\`\`" >> docker-build-report.md
+          else
+            echo "- **Container Logs**: ✅ No obvious errors" >> docker-build-report.md
+          fi
+          
+          # Clean up
+          docker stop test-container >/dev/null 2>&1
+          docker rm test-container >/dev/null 2>&1
+        else
+          echo "- **Container Start**: ❌ Failed to start" >> docker-build-report.md
+          echo "" >> docker-build-report.md
+          echo "### Startup Errors" >> docker-build-report.md
+          echo "\`\`\`" >> docker-build-report.md
+          cat container-start.log >> docker-build-report.md
+          echo "\`\`\`" >> docker-build-report.md
+        fi
+
+    - name: Upload Docker build reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: docker-build-reports
+        path: |
+          docker-build-report.md
+          docker-build.log
+          container-logs.txt
+          container-start.log
+        retention-days: 7
+
+  security-scan:
+    name: Container Security Scan
+    runs-on: ubuntu-latest
+    needs: docker-build-test
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build application and Docker image
+      run: |
+        mvn clean package -DskipTests -B
+        cd group-buy-trade-platform-app
+        docker build -t group-buy-trade-platform:security-test .
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'group-buy-trade-platform:security-test'
+        format: 'json'
+        output: 'trivy-report.json'
+        exit-code: '0'  # Don't fail the job
+
+    - name: Process Trivy results
+      run: |
+        echo "# Container Security Scan Report" > security-report.md
+        echo "" >> security-report.md
+        echo "Generated on: $(date)" >> security-report.md
+        echo "" >> security-report.md
+        
+        if [ -s trivy-report.json ]; then
+          echo "## Vulnerability Summary" >> security-report.md
+          echo "" >> security-report.md
+          
+          # Extract vulnerability counts
+          CRITICAL=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length' trivy-report.json)
+          HIGH=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH")] | length' trivy-report.json)
+          MEDIUM=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "MEDIUM")] | length' trivy-report.json)
+          LOW=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "LOW")] | length' trivy-report.json)
+          
+          echo "- **Critical**: $CRITICAL" >> security-report.md
+          echo "- **High**: $HIGH" >> security-report.md
+          echo "- **Medium**: $MEDIUM" >> security-report.md
+          echo "- **Low**: $LOW" >> security-report.md
+          echo "" >> security-report.md
+          
+          # Show critical and high vulnerabilities
+          if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+            echo "### Critical & High Severity Vulnerabilities" >> security-report.md
+            echo "" >> security-report.md
+            
+            jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL" or .Severity == "HIGH") | "- **" + .VulnerabilityID + "** (" + .Severity + "): " + .Title + " in " + .PkgName' trivy-report.json | head -20 >> security-report.md
+            echo "" >> security-report.md
+          fi
+          
+          # Security assessment
+          TOTAL_HIGH_CRITICAL=$((CRITICAL + HIGH))
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "❌ **Result**: Critical vulnerabilities found - immediate action required" >> security-report.md
+            exit 1
+          elif [ "$HIGH" -gt 10 ]; then
+            echo "⚠️ **Result**: Many high severity vulnerabilities ($HIGH > 10) - update recommended" >> security-report.md
+            exit 1
+          elif [ "$TOTAL_HIGH_CRITICAL" -gt 0 ]; then
+            echo "⚠️ **Result**: Some high/critical vulnerabilities found - consider updating" >> security-report.md
+          else
+            echo "✅ **Result**: No critical or high severity vulnerabilities found" >> security-report.md
+          fi
+        else
+          echo "No vulnerabilities detected or scan failed" >> security-report.md
+        fi
+
+    - name: Scan for secrets in Docker image
+      run: |
+        echo "" >> security-report.md
+        echo "## Secret Detection" >> security-report.md
+        echo "" >> security-report.md
+        
+        # Extract image filesystem for scanning
+        docker save group-buy-trade-platform:security-test -o image.tar
+        tar -xf image.tar
+        
+        # Look for common secret patterns
+        SECRET_PATTERNS="password|secret|key|token|credential"
+        
+        if find . -name "*.json" -exec grep -il "$SECRET_PATTERNS" {} \; | head -5 > secret-files.txt && [ -s secret-files.txt ]; then
+          echo "⚠️ **Warning**: Potential secrets found in image layers" >> security-report.md
+          echo "" >> security-report.md
+          echo "Files that may contain secrets:" >> security-report.md
+          while read file; do
+            echo "- $file" >> security-report.md
+          done < secret-files.txt
+          echo "" >> security-report.md
+          echo "**Recommendation**: Review these files to ensure no secrets are exposed" >> security-report.md
+        else
+          echo "✅ **Result**: No obvious secrets detected in image" >> security-report.md
+        fi
+        
+        # Cleanup
+        rm -rf image.tar */
+
+    - name: Upload security scan reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-scan-reports
+        path: |
+          security-report.md
+          trivy-report.json
+        retention-days: 7
+
+  multi-arch-build:
+    name: Multi-Architecture Build Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Build application
+      run: mvn clean package -DskipTests -B
+
+    - name: Test multi-arch build
+      run: |
+        echo "# Multi-Architecture Build Report" > multiarch-report.md
+        echo "" >> multiarch-report.md
+        echo "Generated on: $(date)" >> multiarch-report.md
+        echo "" >> multiarch-report.md
+        
+        cd group-buy-trade-platform-app
+        
+        echo "## Build Test Results" >> ../multiarch-report.md
+        echo "" >> ../multiarch-report.md
+        
+        # Test amd64 build
+        echo "### AMD64 Build" >> ../multiarch-report.md
+        if docker buildx build --platform linux/amd64 -t group-buy-trade-platform:amd64 . > ../amd64-build.log 2>&1; then
+          echo "- **Status**: ✅ Success" >> ../multiarch-report.md
+        else
+          echo "- **Status**: ❌ Failed" >> ../multiarch-report.md
+          echo "- **Error**: See build logs" >> ../multiarch-report.md
+        fi
+        echo "" >> ../multiarch-report.md
+        
+        # Test arm64 build (if supported)
+        echo "### ARM64 Build" >> ../multiarch-report.md
+        if docker buildx build --platform linux/arm64 -t group-buy-trade-platform:arm64 . > ../arm64-build.log 2>&1; then
+          echo "- **Status**: ✅ Success" >> ../multiarch-report.md
+        else
+          echo "- **Status**: ⚠️ Failed (expected on x86 runners)" >> ../multiarch-report.md
+          echo "- **Note**: ARM64 builds may not work on GitHub's x86 runners" >> ../multiarch-report.md
+        fi
+        echo "" >> ../multiarch-report.md
+        
+        echo "## Recommendations" >> ../multiarch-report.md
+        echo "" >> ../multiarch-report.md
+        echo "1. **AMD64**: Primary architecture - ensure this always works" >> ../multiarch-report.md
+        echo "2. **ARM64**: Consider using self-hosted ARM runners for ARM64 builds" >> ../multiarch-report.md
+        echo "3. **Multi-arch**: Use buildx for simultaneous multi-architecture builds" >> ../multiarch-report.md
+
+    - name: Upload multi-arch build reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: multiarch-build-reports
+        path: |
+          multiarch-report.md
+          amd64-build.log
+          arm64-build.log
+        retention-days: 7
+
+  docker-summary:
+    name: Docker Analysis Summary
+    runs-on: ubuntu-latest
+    needs: [dockerfile-analysis, docker-build-test, security-scan]
+    if: always()
+
+    steps:
+    - name: Download all Docker reports
+      uses: actions/download-artifact@v4
+
+    - name: Generate Docker summary
+      run: |
+        echo "# Docker Analysis Summary" > docker-summary.md
+        echo "" >> docker-summary.md
+        echo "Generated on: $(date)" >> docker-summary.md
+        echo "" >> docker-summary.md
+        
+        # Dockerfile Analysis Summary
+        echo "## Dockerfile Analysis" >> docker-summary.md
+        if [ -f dockerfile-analysis/dockerfile-report.md ]; then
+          if grep -q "❌" dockerfile-analysis/dockerfile-report.md; then
+            echo "❌ **Status**: Critical Dockerfile issues found" >> docker-summary.md
+          elif grep -q "⚠️" dockerfile-analysis/dockerfile-report.md; then
+            echo "⚠️ **Status**: Dockerfile warnings found" >> docker-summary.md
+          else
+            echo "✅ **Status**: Dockerfile analysis passed" >> docker-summary.md
+          fi
+        else
+          echo "❌ **Status**: Dockerfile analysis failed" >> docker-summary.md
+        fi
+        echo "" >> docker-summary.md
+        
+        # Build Test Summary
+        echo "## Docker Build Test" >> docker-summary.md
+        if [ -f docker-build-reports/docker-build-report.md ]; then
+          if grep -q "✅ Success" docker-build-reports/docker-build-report.md; then
+            echo "✅ **Status**: Docker build successful" >> docker-summary.md
+          else
+            echo "❌ **Status**: Docker build failed" >> docker-summary.md
+          fi
+        else
+          echo "❌ **Status**: Docker build test failed" >> docker-summary.md
+        fi
+        echo "" >> docker-summary.md
+        
+        # Security Scan Summary
+        echo "## Security Scan" >> docker-summary.md
+        if [ -f security-scan-reports/security-report.md ]; then
+          if grep -q "Critical vulnerabilities found" security-scan-reports/security-report.md; then
+            echo "❌ **Status**: Critical vulnerabilities detected" >> docker-summary.md
+          elif grep -q "high severity vulnerabilities" security-scan-reports/security-report.md; then
+            echo "⚠️ **Status**: High severity vulnerabilities found" >> docker-summary.md
+          else
+            echo "✅ **Status**: No critical security issues" >> docker-summary.md
+          fi
+        else
+          echo "❌ **Status**: Security scan failed" >> docker-summary.md
+        fi
+        echo "" >> docker-summary.md
+        
+        # Multi-arch Build Summary (if available)
+        if [ -f multiarch-build-reports/multiarch-report.md ]; then
+          echo "## Multi-Architecture Build" >> docker-summary.md
+          echo "ℹ️ **Status**: Multi-arch build test completed" >> docker-summary.md
+          echo "" >> docker-summary.md
+        fi
+        
+        # Overall Recommendations
+        echo "## Action Items" >> docker-summary.md
+        echo "" >> docker-summary.md
+        echo "1. **Review Reports**: Check individual reports for detailed findings" >> docker-summary.md
+        echo "2. **Fix Critical Issues**: Address any critical Dockerfile or security issues" >> docker-summary.md
+        echo "3. **Optimize Image Size**: Consider multi-stage builds to reduce image size" >> docker-summary.md
+        echo "4. **Security Updates**: Regularly update base images and dependencies" >> docker-summary.md
+        echo "5. **Monitoring**: Set up container monitoring in production" >> docker-summary.md
+
+    - name: Upload Docker summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: docker-summary
+        path: docker-summary.md
+        retention-days: 30
