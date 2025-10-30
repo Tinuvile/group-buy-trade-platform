@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class GroupBuyActivity {
 
     /* 自增 */
-    private String id;
+    private Long id;
 
     /* 活动ID */
     private String activityId;
