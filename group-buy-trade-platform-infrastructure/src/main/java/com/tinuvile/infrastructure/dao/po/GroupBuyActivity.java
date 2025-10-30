@@ -21,6 +21,9 @@ public class GroupBuyActivity {
     /* 活动ID */
     private String activityId;
 
+    /* 活动名称 */
+    private String activityName;
+
     /* 来源 */
     private String source;
 

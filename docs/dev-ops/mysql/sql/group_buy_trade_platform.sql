@@ -28,6 +28,7 @@ DROP TABLE IF EXISTS `group_buy_activity`;
 CREATE TABLE `group_buy_activity` (
     `id` bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增',
     `activity_id` bigint(8) NOT NULL COMMENT '活动ID',
+    `activity_name` varchar(128) NOT NULL COMMENT '活动名称',
     `source` varchar(8) NOT NULL COMMENT '来源',
     `channel` varchar(8) NOT NULL COMMENT '渠道',
     `goods_id` varchar(12) NOT NULL COMMENT '商品ID',
