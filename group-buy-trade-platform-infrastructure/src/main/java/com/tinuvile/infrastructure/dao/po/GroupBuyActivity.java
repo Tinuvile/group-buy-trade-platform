@@ -19,7 +19,7 @@ public class GroupBuyActivity {
     private Long id;
 
     /* 活动ID */
-    private String activityId;
+    private Long activityId;
 
     /* 活动名称 */
     private String activityName;
