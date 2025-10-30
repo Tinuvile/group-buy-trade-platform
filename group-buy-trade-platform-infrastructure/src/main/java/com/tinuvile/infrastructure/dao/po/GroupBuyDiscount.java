@@ -19,7 +19,7 @@ public class GroupBuyDiscount {
     private Long id;
 
     /* 折扣ID */
-    private String discountId;
+    private Integer discountId;
 
     /* 折扣标题 */
     private String discountName;
