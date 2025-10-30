@@ -1,0 +1,5 @@
+spring:
+  config:
+    name: group-buy-trade-platform-app
+  profiles:
+    active: dev
