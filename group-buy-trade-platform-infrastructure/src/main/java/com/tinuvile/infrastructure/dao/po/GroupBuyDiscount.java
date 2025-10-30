@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 public class GroupBuyDiscount {
 
     /* 自增ID */
-    private String id;
+    private Long id;
 
     /* 折扣ID */
     private String discountId;
