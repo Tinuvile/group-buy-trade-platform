@@ -30,52 +30,63 @@ jobs:
 
     - name: Check Google Java Format
       run: |
-        # Download Google Java Format
-        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar
+        # Download Google Java Format (Java 8 compatible version)
+        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.15.0/google-java-format-1.15.0-all-deps.jar
         
         # Find all Java files
         find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" > java-files.txt
         
         # Check format
+        echo "# Google Java Format Report" > format-check-report.md
+        echo "" >> format-check-report.md
+        echo "Generated on: $(date)" >> format-check-report.md
+        echo "" >> format-check-report.md
+        
         if [ -s java-files.txt ]; then
+          JAVA_FILE_COUNT=$(wc -l < java-files.txt)
+          echo "## Files Checked" >> format-check-report.md
+          echo "- **Total Java files**: $JAVA_FILE_COUNT" >> format-check-report.md
+          echo "" >> format-check-report.md
+          
           echo "Checking Java code format..."
-          java -jar google-java-format.jar --dry-run --set-exit-if-changed $(cat java-files.txt) || {
+          if java -jar google-java-format.jar --dry-run --set-exit-if-changed $(cat java-files.txt); then
+            echo "✅ All Java files are properly formatted"
+            echo "## Format Check Results" >> format-check-report.md
+            echo "✅ **Status**: All files are properly formatted" >> format-check-report.md
+          else
             echo "❌ Code format issues found!"
-            echo "Files that need formatting:"
-            java -jar google-java-format.jar --dry-run --set-exit-if-changed $(cat java-files.txt) 2>&1 | grep -E "\.java" || true
+            echo "## Format Check Results" >> format-check-report.md
+            echo "❌ **Status**: Some files need formatting" >> format-check-report.md
+            echo "" >> format-check-report.md
+            echo "### Files that need formatting:" >> format-check-report.md
+            
+            # Check each file individually to identify which ones need formatting
+            while read -r file; do
+              if ! java -jar google-java-format.jar --dry-run --set-exit-if-changed "$file" >/dev/null 2>&1; then
+                echo "- \`$file\`" >> format-check-report.md
+              fi
+            done < java-files.txt
+            
+            echo "" >> format-check-report.md
+            echo "### How to fix:" >> format-check-report.md
+            echo "1. Run \`git commit -m 'fix: code formatting [auto-format]'\` to trigger auto-formatting" >> format-check-report.md
+            echo "2. Or manually run Google Java Format on these files" >> format-check-report.md
             exit 1
-          }
-          echo "✅ All Java files are properly formatted"
+          fi
         else
           echo "No Java files found to check"
+          echo "## Files Checked" >> format-check-report.md
+          echo "⚠️ **Warning**: No Java files found in the project" >> format-check-report.md
         fi
 
-    - name: Generate format report
-      if: failure()
-      run: |
-        echo "# Code Format Issues Report" > format-report.md
-        echo "" >> format-report.md
-        echo "The following files have formatting issues:" >> format-report.md
-        echo "" >> format-report.md
-        
-        find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" | while read file; do
-          if ! java -jar google-java-format.jar --dry-run --set-exit-if-changed "$file" >/dev/null 2>&1; then
-            echo "- \`$file\`" >> format-report.md
-          fi
-        done
-        
-        echo "" >> format-report.md
-        echo "## How to fix:" >> format-report.md
-        echo "1. Run the auto-format workflow or" >> format-report.md
-        echo "2. Use your IDE's format feature or" >> format-report.md
-        echo "3. Run: \`mvn spotless:apply\`" >> format-report.md
-
     - name: Upload format report
-      if: failure()
+      if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: format-issues-report
-        path: format-report.md
+        name: google-java-format-report
+        path: |
+          format-check-report.md
+          java-files.txt
         retention-days: 7
 
   spotless-check:
@@ -114,7 +125,7 @@ jobs:
                 <include>src/test/java/**/*.java</include>
               </includes>
               <googleJavaFormat>
-                <version>1.19.2</version>
+                <version>1.15.0</version>
                 <style>GOOGLE</style>
               </googleJavaFormat>
               <removeUnusedImports/>
@@ -148,21 +159,56 @@ jobs:
 
     - name: Check with Spotless
       run: |
-        # Add the plugin to parent POM temporarily for checking
+        echo "# Spotless Format Check Report" > spotless-report.md
+        echo "" >> spotless-report.md
+        echo "Generated on: $(date)" >> spotless-report.md
+        echo "" >> spotless-report.md
+        
+        # Create a temporary POM with Spotless plugin
         if [ -f pom.xml ]; then
-          # Insert plugin before closing </plugins> tag
-          sed -i '/<\/plugins>/i\
-        '"$(cat spotless-config.xml | sed 's/$/\\/' | tr -d '\n' | sed 's/\\$//')" pom.xml
+          # Backup original POM
+          cp pom.xml pom.xml.backup
           
-          # Run spotless check
-          mvn spotless:check -B || {
-            echo "❌ Spotless format check failed!"
-            echo "Run 'mvn spotless:apply' to fix formatting issues"
-            exit 1
-          }
-          echo "✅ Spotless format check passed"
+          # Check if plugins section exists
+          if grep -q "<plugins>" pom.xml; then
+            # Insert plugin before closing </plugins> tag
+            sed -i '/<\/plugins>/i\
+        '"$(cat spotless-config.xml | sed 's/&/\\\&/g')" pom.xml
+            
+            echo "## Spotless Plugin Configuration" >> spotless-report.md
+            echo "- **Status**: Plugin added to POM temporarily" >> spotless-report.md
+            echo "" >> spotless-report.md
+            
+            # Run spotless check
+            echo "## Format Check Results" >> spotless-report.md
+            if mvn spotless:check -B -q; then
+              echo "✅ **Result**: All files are properly formatted" >> spotless-report.md
+              echo "✅ Spotless format check passed"
+            else
+              echo "⚠️ **Result**: Some files need formatting" >> spotless-report.md
+              echo "⚠️ Spotless format check found issues - continuing with warning"
+            fi
+          else
+            echo "⚠️ **Warning**: No <plugins> section found in POM" >> spotless-report.md
+            echo "⚠️ No plugins section found, skipping Spotless check"
+          fi
+          
+          # Restore original POM
+          mv pom.xml.backup pom.xml
+        else
+          echo "❌ **Error**: No pom.xml found" >> spotless-report.md
         fi
       continue-on-error: true
+
+    - name: Upload Spotless report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: spotless-report
+        path: |
+          spotless-report.md
+          spotless-config.xml
+        retention-days: 7
 
   auto-format:
     name: Auto Format (Create PR)
@@ -183,8 +229,8 @@ jobs:
 
     - name: Format code with Google Java Format
       run: |
-        # Download Google Java Format
-        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar
+        # Download Google Java Format (Java 8 compatible version)
+        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.15.0/google-java-format-1.15.0-all-deps.jar
         
         # Format all Java files
         find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" -exec java -jar google-java-format.jar --replace {} \;
@@ -319,8 +365,8 @@ jobs:
 
     - name: Run CheckStyle
       run: |
-        # Download CheckStyle
-        wget -O checkstyle.jar https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar
+        # Download CheckStyle (Java 8 compatible version)
+        wget -O checkstyle.jar https://github.com/checkstyle/checkstyle/releases/download/checkstyle-8.45.1/checkstyle-8.45.1-all.jar
         
         # Run CheckStyle on all Java files
         find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" > java-files.txt
@@ -349,3 +395,88 @@ jobs:
           checkstyle-report.txt
           .github/checkstyle/checkstyle.xml
         retention-days: 7
+
+  format-summary:
+    name: Code Format Summary
+    runs-on: ubuntu-latest
+    needs: [format-check, spotless-check, checkstyle]
+    if: always()
+
+    steps:
+    - name: Download all format reports
+      uses: actions/download-artifact@v4
+
+    - name: Generate format summary
+      run: |
+        echo "# Code Format Validation Summary" > format-summary.md
+        echo "" >> format-summary.md
+        echo "Generated on: $(date)" >> format-summary.md
+        echo "" >> format-summary.md
+        
+        # Google Java Format Summary
+        echo "## Google Java Format Check" >> format-summary.md
+        if [ -f google-java-format-report/format-check-report.md ]; then
+          if grep -q "✅.*All files are properly formatted" google-java-format-report/format-check-report.md; then
+            echo "✅ **Status**: All files properly formatted" >> format-summary.md
+          elif grep -q "❌.*Some files need formatting" google-java-format-report/format-check-report.md; then
+            echo "❌ **Status**: Files need formatting" >> format-summary.md
+          else
+            echo "⚠️ **Status**: Check completed with warnings" >> format-summary.md
+          fi
+        else
+          echo "❌ **Status**: Google Java Format check failed" >> format-summary.md
+        fi
+        echo "" >> format-summary.md
+        
+        # Spotless Summary
+        echo "## Spotless Format Check" >> format-summary.md
+        if [ -f spotless-report/spotless-report.md ]; then
+          if grep -q "✅.*All files are properly formatted" spotless-report/spotless-report.md; then
+            echo "✅ **Status**: All files properly formatted" >> format-summary.md
+          elif grep -q "⚠️.*Some files need formatting" spotless-report/spotless-report.md; then
+            echo "⚠️ **Status**: Files need formatting" >> format-summary.md
+          else
+            echo "ℹ️ **Status**: Spotless check completed" >> format-summary.md
+          fi
+        else
+          echo "⚠️ **Status**: Spotless check skipped or failed" >> format-summary.md
+        fi
+        echo "" >> format-summary.md
+        
+        # CheckStyle Summary
+        echo "## CheckStyle Validation" >> format-summary.md
+        if [ -f checkstyle-report/checkstyle-report.txt ]; then
+          if grep -q "\[ERROR\]" checkstyle-report/checkstyle-report.txt; then
+            ERROR_COUNT=$(grep -c "\[ERROR\]" checkstyle-report/checkstyle-report.txt || echo "0")
+            echo "❌ **Status**: $ERROR_COUNT CheckStyle violations found" >> format-summary.md
+          else
+            echo "✅ **Status**: No CheckStyle violations" >> format-summary.md
+          fi
+        else
+          echo "⚠️ **Status**: CheckStyle validation failed or skipped" >> format-summary.md
+        fi
+        echo "" >> format-summary.md
+        
+        # Recommendations
+        echo "## Recommendations" >> format-summary.md
+        echo "" >> format-summary.md
+        echo "1. **Format Issues**: Run \`git commit -m 'fix: formatting [auto-format]'\` to trigger auto-formatting" >> format-summary.md
+        echo "2. **IDE Setup**: Configure your IDE to use Google Java Format" >> format-summary.md
+        echo "3. **Pre-commit**: Consider adding format checks to pre-commit hooks" >> format-summary.md
+        echo "4. **CI Integration**: All format checks should pass before merging" >> format-summary.md
+        echo "" >> format-summary.md
+        
+        # Detailed Reports Reference
+        echo "## Detailed Reports" >> format-summary.md
+        echo "" >> format-summary.md
+        echo "For detailed findings, check these artifacts:" >> format-summary.md
+        echo "- \`google-java-format-report\`: Google Java Format analysis" >> format-summary.md
+        echo "- \`spotless-report\`: Spotless format check results" >> format-summary.md
+        echo "- \`checkstyle-report\`: CheckStyle validation details" >> format-summary.md
+
+    - name: Upload format summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: format-validation-summary
+        path: format-summary.md
+        retention-days: 30

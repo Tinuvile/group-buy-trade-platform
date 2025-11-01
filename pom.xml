@@ -8,12 +8,12 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>group-buy-trade-platform-api</module>
-        <module>group-buy-trade-platform-app</module>
-        <module>group-buy-trade-platform-domain</module>
-        <module>group-buy-trade-platform-trigger</module>
-        <module>group-buy-trade-platform-infrastructure</module>
         <module>group-buy-trade-platform-types</module>
+        <module>group-buy-trade-platform-api</module>
+        <module>group-buy-trade-platform-domain</module>
+        <module>group-buy-trade-platform-infrastructure</module>
+        <module>group-buy-trade-platform-trigger</module>
+        <module>group-buy-trade-platform-app</module>
     </modules>
 
     <repositories>
