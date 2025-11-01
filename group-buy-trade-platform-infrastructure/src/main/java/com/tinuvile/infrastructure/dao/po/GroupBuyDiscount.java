@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * @author Tinuvile
  * @since 2025-10-30
@@ -40,8 +42,8 @@ public class GroupBuyDiscount {
     private String tagId;
 
     /* 创建时间 */
-    private String createTime;
+    private LocalDateTime createTime;
 
     /* 更新时间 */
-    private String updateTime;
+    private LocalDateTime updateTime;
 }

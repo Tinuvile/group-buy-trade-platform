@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 /**
  * @author Tinuvile
  * @since 2025-10-30
@@ -52,10 +55,10 @@ public class GroupBuyActivity {
     private Integer status;
 
     /* 活动开始时间 */
-    private String startTime;
+    private LocalDateTime startTime;
 
     /* 活动结束时间 */
-    private String endTime;
+    private LocalDateTime endTime;
 
     /* 人群标签规则标识 */
     private String tagId;
@@ -64,8 +67,8 @@ public class GroupBuyActivity {
     private String tagScope;
 
     /* 创建时间 */
-    private String createTime;
+    private LocalDateTime createTime;
 
     /* 更新时间 */
-    private String updateTime;
+    private LocalDateTime updateTime;
 }
