@@ -1,5 +1,5 @@
 /**
- * @description escription 责任链模板
+ * @description 责任链模板
  * @author Tinuvile
  * @since 2025-10-30
  **/

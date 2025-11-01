@@ -18,7 +18,6 @@ import javax.annotation.Resource;
 @Slf4j
 @Service
 public class SwitchNode extends AbstractGroupBuyMarketSupport<MarketProductEntity, DefaultActivityStrategyFactory.DynamicContext, TrialBalanceEntity> {
-    @Resource
     private SwitchNode switchNode;
 
     @Override
@@ -28,6 +27,6 @@ public class SwitchNode extends AbstractGroupBuyMarketSupport<MarketProductEntit
 
     @Override
     public StrategyHandler<MarketProductEntity, DefaultActivityStrategyFactory.DynamicContext, TrialBalanceEntity> get(MarketProductEntity requestParameter, DefaultActivityStrategyFactory.DynamicContext dynamicContext) {
-        return switchNode;
+        return this.switchNode;
     }
 }
