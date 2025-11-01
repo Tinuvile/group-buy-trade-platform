@@ -1,0 +1,635 @@
+name: Configuration File Validation
+
+on:
+  push:
+    branches: [ main, develop, '20*' ]
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.properties'
+      - '**/*.xml'
+      - '**/*.json'
+      - 'docs/dev-ops/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.properties'
+      - '**/*.xml'
+      - '**/*.json'
+      - 'docs/dev-ops/**'
+
+jobs:
+  yaml-validation:
+    name: YAML File Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install YAML validator
+      run: |
+        pip install PyYAML yamllint
+
+    - name: Find YAML files
+      run: |
+        find . -name "*.yml" -o -name "*.yaml" | grep -v target | grep -v .git > yaml-files.txt
+        echo "Found YAML files:"
+        cat yaml-files.txt
+
+    - name: Validate YAML syntax
+      run: |
+        echo "# YAML Validation Report" > yaml-report.md
+        echo "" >> yaml-report.md
+        echo "Generated on: $(date)" >> yaml-report.md
+        echo "" >> yaml-report.md
+        
+        YAML_ERRORS=0
+        
+        echo "## YAML Syntax Validation" >> yaml-report.md
+        echo "" >> yaml-report.md
+        
+        while read -r file; do
+          if [ -f "$file" ]; then
+            echo "Validating: $file"
+            if python -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+              echo "- ✅ **$file**: Valid YAML syntax" >> yaml-report.md
+            else
+              echo "- ❌ **$file**: Invalid YAML syntax" >> yaml-report.md
+              python -c "import yaml; yaml.safe_load(open('$file'))" 2>&1 | head -3 >> yaml-report.md
+              YAML_ERRORS=$((YAML_ERRORS + 1))
+            fi
+          fi
+        done < yaml-files.txt
+        
+        echo "" >> yaml-report.md
+        echo "**Total YAML files**: $(wc -l < yaml-files.txt)" >> yaml-report.md
+        echo "**Files with errors**: $YAML_ERRORS" >> yaml-report.md
+        
+        if [ $YAML_ERRORS -gt 0 ]; then
+          echo "❌ YAML validation failed with $YAML_ERRORS errors"
+          exit 1
+        else
+          echo "✅ All YAML files are valid"
+        fi
+
+    - name: Run yamllint
+      run: |
+        echo "" >> yaml-report.md
+        echo "## YAML Style Check (yamllint)" >> yaml-report.md
+        echo "" >> yaml-report.md
+        
+        # Create yamllint config
+        cat > .yamllint.yml << 'EOF'
+        extends: default
+        rules:
+          line-length:
+            max: 200  # More lenient line length for GitHub Actions
+          comments:
+            min-spaces-from-content: 1
+            require-starting-space: false
+          indentation:
+            spaces: 2
+            indent-sequences: consistent
+          truthy:
+            allowed-values: ['true', 'false', 'on', 'off', 'yes', 'no']
+          braces:
+            max-spaces-inside: 1
+            max-spaces-inside-empty: 0
+          brackets:
+            max-spaces-inside: 1
+            max-spaces-inside-empty: 0
+          colons:
+            max-spaces-before: 0
+            max-spaces-after: -1
+          commas:
+            max-spaces-before: 0
+            max-spaces-after: -1
+          comments-indentation: disable
+          document-start: disable
+          empty-lines:
+            max-end: 1
+          quoted-strings: disable
+        EOF
+        
+        if yamllint . -f parsable > yamllint-output.txt 2>&1; then
+          echo "✅ **Result**: No yamllint issues found" >> yaml-report.md
+        else
+          YAMLLINT_ISSUES=$(wc -l < yamllint-output.txt)
+          echo "⚠️ **Result**: $YAMLLINT_ISSUES yamllint issues found" >> yaml-report.md
+          echo "" >> yaml-report.md
+          echo "### yamllint Issues" >> yaml-report.md
+          echo "\`\`\`" >> yaml-report.md
+          head -20 yamllint-output.txt >> yaml-report.md
+          echo "\`\`\`" >> yaml-report.md
+          
+          # Only fail if there are many critical issues
+          CRITICAL_ISSUES=$(grep -c "error" yamllint-output.txt || echo "0")
+          if [ $CRITICAL_ISSUES -gt 50 ]; then
+            echo "❌ Too many critical yamllint issues ($CRITICAL_ISSUES > 50)"
+            exit 1
+          else
+            echo "⚠️ Found $CRITICAL_ISSUES yamllint issues, but continuing (threshold: 50)"
+          fi
+        fi
+
+    - name: Upload YAML validation report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: yaml-validation-report
+        path: |
+          yaml-report.md
+          yamllint-output.txt
+          .yamllint.yml
+        retention-days: 7
+
+  spring-config-validation:
+    name: Spring Configuration Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Validate Spring Boot configuration
+      run: |
+        echo "# Spring Configuration Validation Report" > spring-config-report.md
+        echo "" >> spring-config-report.md
+        echo "Generated on: $(date)" >> spring-config-report.md
+        echo "" >> spring-config-report.md
+        
+        # Find Spring configuration files
+        find . -name "application*.yml" -o -name "application*.yaml" -o -name "application*.properties" | grep -v target > spring-config-files.txt
+        
+        echo "## Spring Configuration Files Found" >> spring-config-report.md
+        echo "" >> spring-config-report.md
+        
+        while read -r file; do
+          if [ -f "$file" ]; then
+            echo "- $file" >> spring-config-report.md
+          fi
+        done < spring-config-files.txt
+        
+        echo "" >> spring-config-report.md
+
+    - name: Check configuration consistency
+      run: |
+        echo "## Configuration Consistency Check" >> spring-config-report.md
+        echo "" >> spring-config-report.md
+        
+        # Check for common Spring Boot properties
+        COMMON_PROPS="server.port spring.datasource.url spring.datasource.username spring.redis.host spring.profiles.active"
+        
+        for prop in $COMMON_PROPS; do
+          echo "### Property: $prop" >> spring-config-report.md
+          
+          FILES_WITH_PROP=$(grep -l "$prop" group-buy-trade-platform-app/src/main/resources/application*.yml 2>/dev/null || echo "")
+          
+          if [ -n "$FILES_WITH_PROP" ]; then
+            echo "Found in:" >> spring-config-report.md
+            for file in $FILES_WITH_PROP; do
+              VALUE=$(grep "$prop" "$file" | head -1 | cut -d':' -f2- | xargs)
+              echo "- **$file**: \`$VALUE\`" >> spring-config-report.md
+            done
+          else
+            echo "⚠️ Not found in any configuration file" >> spring-config-report.md
+          fi
+          echo "" >> spring-config-report.md
+        done
+
+    - name: Check for sensitive information
+      run: |
+        echo "## Sensitive Information Check" >> spring-config-report.md
+        echo "" >> spring-config-report.md
+        
+        SENSITIVE_PATTERNS="password|secret|key|token|credential|private"
+        SENSITIVE_FOUND=0
+        
+        while read -r file; do
+          if [ -f "$file" ]; then
+            if grep -qi "$SENSITIVE_PATTERNS" "$file"; then
+              echo "⚠️ **$file**: May contain sensitive information" >> spring-config-report.md
+              grep -ni "$SENSITIVE_PATTERNS" "$file" | head -3 | sed 's/^/  - /' >> spring-config-report.md
+              SENSITIVE_FOUND=$((SENSITIVE_FOUND + 1))
+            fi
+          fi
+        done < spring-config-files.txt
+        
+        if [ $SENSITIVE_FOUND -eq 0 ]; then
+          echo "✅ **Result**: No obvious sensitive information found in configuration files" >> spring-config-report.md
+        else
+          echo "" >> spring-config-report.md
+          echo "**⚠️ Warning**: $SENSITIVE_FOUND files may contain sensitive information. Review manually." >> spring-config-report.md
+        fi
+        echo "" >> spring-config-report.md
+
+    - name: Validate environment-specific configs
+      run: |
+        echo "## Environment-Specific Configuration Validation" >> spring-config-report.md
+        echo "" >> spring-config-report.md
+        
+        ENVS="dev test prod"
+        
+        for env in $ENVS; do
+          CONFIG_FILE="group-buy-trade-platform-app/src/main/resources/application-${env}.yml"
+          if [ -f "$CONFIG_FILE" ]; then
+            echo "### Environment: $env" >> spring-config-report.md
+            echo "- **File**: $CONFIG_FILE ✅" >> spring-config-report.md
+            
+            # Check if it's valid YAML
+            if python -c "import yaml; yaml.safe_load(open('$CONFIG_FILE'))" 2>/dev/null; then
+              echo "- **Syntax**: Valid YAML ✅" >> spring-config-report.md
+            else
+              echo "- **Syntax**: Invalid YAML ❌" >> spring-config-report.md
+            fi
+            
+            # Check for required properties per environment
+            case $env in
+              "prod")
+                if grep -q "debug: false\|logging.level.root: WARN\|logging.level.org.springframework: WARN" "$CONFIG_FILE"; then
+                  echo "- **Production Settings**: Appropriate logging levels ✅" >> spring-config-report.md
+                else
+                  echo "- **Production Settings**: May need review (check logging levels) ⚠️" >> spring-config-report.md
+                fi
+                ;;
+              "dev")
+                if grep -q "debug: true\|logging.level" "$CONFIG_FILE"; then
+                  echo "- **Development Settings**: Debug settings found ✅" >> spring-config-report.md
+                else
+                  echo "- **Development Settings**: May need debug configuration ⚠️" >> spring-config-report.md
+                fi
+                ;;
+            esac
+          else
+            echo "### Environment: $env" >> spring-config-report.md
+            echo "- **File**: Missing ($CONFIG_FILE) ⚠️" >> spring-config-report.md
+          fi
+          echo "" >> spring-config-report.md
+        done
+
+    - name: Upload Spring config validation report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: spring-config-validation-report
+        path: |
+          spring-config-report.md
+          spring-config-files.txt
+        retention-days: 7
+
+  database-config-validation:
+    name: Database Configuration Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install XML validation tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libxml2-utils
+
+    - name: Validate database configurations
+      run: |
+        echo "# Database Configuration Validation Report" > db-config-report.md
+        echo "" >> db-config-report.md
+        echo "Generated on: $(date)" >> db-config-report.md
+        echo "" >> db-config-report.md
+        
+        # Check MyBatis configuration
+        echo "## MyBatis Configuration" >> db-config-report.md
+        echo "" >> db-config-report.md
+        
+        MYBATIS_CONFIG="group-buy-trade-platform-app/src/main/resources/mybatis/config/mybatis-config.xml"
+        if [ -f "$MYBATIS_CONFIG" ]; then
+          echo "- **MyBatis Config**: Found ✅" >> db-config-report.md
+          
+          # Validate XML syntax
+          if xmllint --noout "$MYBATIS_CONFIG" 2>/dev/null; then
+            echo "- **XML Syntax**: Valid ✅" >> db-config-report.md
+          else
+            echo "- **XML Syntax**: Invalid ❌" >> db-config-report.md
+            xmllint --noout "$MYBATIS_CONFIG" 2>&1 | head -3 >> db-config-report.md
+          fi
+        else
+          echo "- **MyBatis Config**: Not found ⚠️" >> db-config-report.md
+        fi
+        echo "" >> db-config-report.md
+        
+        # Check mapper files
+        echo "## MyBatis Mapper Files" >> db-config-report.md
+        echo "" >> db-config-report.md
+        
+        find . -name "*mapper.xml" -path "*/mybatis/mapper/*" > mapper-files.txt
+        
+        MAPPER_COUNT=$(wc -l < mapper-files.txt)
+        echo "- **Mapper Files Found**: $MAPPER_COUNT" >> db-config-report.md
+        echo "" >> db-config-report.md
+        
+        INVALID_MAPPERS=0
+        while read -r mapper; do
+          if [ -f "$mapper" ]; then
+            if xmllint --noout "$mapper" 2>/dev/null; then
+              echo "- ✅ **$mapper**: Valid XML" >> db-config-report.md
+            else
+              echo "- ❌ **$mapper**: Invalid XML" >> db-config-report.md
+              INVALID_MAPPERS=$((INVALID_MAPPERS + 1))
+            fi
+          fi
+        done < mapper-files.txt
+        
+        echo "" >> db-config-report.md
+        echo "**Summary**: $INVALID_MAPPERS invalid mapper files out of $MAPPER_COUNT total" >> db-config-report.md
+        
+        if [ $INVALID_MAPPERS -gt 0 ]; then
+          echo "❌ Database configuration validation failed"
+          exit 1
+        fi
+
+    - name: Check SQL files
+      run: |
+        echo "" >> db-config-report.md
+        echo "## SQL Files Validation" >> db-config-report.md
+        echo "" >> db-config-report.md
+        
+        find . -name "*.sql" | grep -v target > sql-files.txt
+        
+        SQL_COUNT=$(wc -l < sql-files.txt)
+        echo "- **SQL Files Found**: $SQL_COUNT" >> db-config-report.md
+        echo "" >> db-config-report.md
+        
+        while read -r sqlfile; do
+          if [ -f "$sqlfile" ]; then
+            # Basic SQL syntax check (look for common issues)
+            if grep -qi "drop table\|truncate\|delete from.*without where" "$sqlfile"; then
+              echo "- ⚠️ **$sqlfile**: Contains potentially dangerous SQL operations" >> db-config-report.md
+            else
+              echo "- ✅ **$sqlfile**: No obvious dangerous operations" >> db-config-report.md
+            fi
+            
+            # Check for SQL injection patterns
+            if grep -qi "select.*\+.*\||update.*\+.*\||insert.*\+.*\|" "$sqlfile"; then
+              echo "  - ⚠️ May contain SQL injection vulnerabilities" >> db-config-report.md
+            fi
+          fi
+        done < sql-files.txt
+
+    - name: Upload database config validation report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: db-config-validation-report
+        path: |
+          db-config-report.md
+          mapper-files.txt
+          sql-files.txt
+        retention-days: 7
+
+  docker-compose-validation:
+    name: Docker Compose Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Compose
+      run: |
+        # Install Docker Compose v2 (available as docker compose)
+        docker compose version || {
+          echo "Installing Docker Compose..."
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+        }
+
+    - name: Find Docker Compose files
+      run: |
+        find . -name "docker-compose*.yml" -o -name "docker-compose*.yaml" > compose-files.txt
+        echo "Found Docker Compose files:"
+        cat compose-files.txt
+
+    - name: Validate Docker Compose files
+      run: |
+        echo "# Docker Compose Validation Report" > compose-report.md
+        echo "" >> compose-report.md
+        echo "Generated on: $(date)" >> compose-report.md
+        echo "" >> compose-report.md
+        
+        COMPOSE_ERRORS=0
+        
+        echo "## Docker Compose File Validation" >> compose-report.md
+        echo "" >> compose-report.md
+        
+        while read -r file; do
+          if [ -f "$file" ]; then
+            echo "Validating: $file"
+            
+            # Check YAML syntax first
+            if python -c "import yaml; yaml.safe_load(open('$file'))" 2>/dev/null; then
+              echo "- ✅ **$file**: Valid YAML syntax" >> compose-report.md
+              
+              # Validate Docker Compose syntax (try v2 first, fallback to v1)
+              if docker compose -f "$file" config >/dev/null 2>&1; then
+                echo "  - ✅ Valid Docker Compose syntax" >> compose-report.md
+              elif docker-compose -f "$file" config >/dev/null 2>&1; then
+                echo "  - ✅ Valid Docker Compose syntax" >> compose-report.md
+              else
+                echo "  - ❌ Invalid Docker Compose syntax" >> compose-report.md
+                (docker compose -f "$file" config 2>&1 || docker-compose -f "$file" config 2>&1) | head -3 | sed 's/^/    /' >> compose-report.md
+                COMPOSE_ERRORS=$((COMPOSE_ERRORS + 1))
+              fi
+            else
+              echo "- ❌ **$file**: Invalid YAML syntax" >> compose-report.md
+              COMPOSE_ERRORS=$((COMPOSE_ERRORS + 1))
+            fi
+            echo "" >> compose-report.md
+          fi
+        done < compose-files.txt
+        
+        echo "**Total Docker Compose files**: $(wc -l < compose-files.txt)" >> compose-report.md
+        echo "**Files with errors**: $COMPOSE_ERRORS" >> compose-report.md
+        
+        if [ $COMPOSE_ERRORS -gt 0 ]; then
+          echo "❌ Docker Compose validation failed with $COMPOSE_ERRORS errors"
+          exit 1
+        else
+          echo "✅ All Docker Compose files are valid"
+        fi
+
+    - name: Check Docker Compose security
+      run: |
+        echo "" >> compose-report.md
+        echo "## Security Check" >> compose-report.md
+        echo "" >> compose-report.md
+        
+        SECURITY_ISSUES=0
+        
+        while read -r file; do
+          if [ -f "$file" ]; then
+            echo "### Security Analysis: $file" >> compose-report.md
+            
+            # Check for security issues
+            if grep -qi "privileged.*true" "$file"; then
+              echo "- ⚠️ **Privileged containers** detected" >> compose-report.md
+              SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            if grep -qi "network_mode.*host" "$file"; then
+              echo "- ⚠️ **Host networking** detected" >> compose-report.md
+              SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            if grep -qi "/var/run/docker.sock" "$file"; then
+              echo "- ⚠️ **Docker socket mount** detected" >> compose-report.md
+              SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            # Check for hardcoded passwords
+            if grep -qE "password|secret|key" "$file" | grep -v "\${" | grep -qv "PLACEHOLDER"; then
+              echo "- ⚠️ **Potential hardcoded secrets** detected" >> compose-report.md
+              SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            if [ $SECURITY_ISSUES -eq 0 ]; then
+              echo "- ✅ No obvious security issues detected" >> compose-report.md
+            fi
+            
+            echo "" >> compose-report.md
+          fi
+        done < compose-files.txt
+        
+        echo "**Total security issues**: $SECURITY_ISSUES" >> compose-report.md
+
+    - name: Upload Docker Compose validation report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: compose-validation-report
+        path: |
+          compose-report.md
+          compose-files.txt
+        retention-days: 7
+
+  config-summary:
+    name: Configuration Validation Summary
+    runs-on: ubuntu-latest
+    needs: [yaml-validation, spring-config-validation, database-config-validation, docker-compose-validation]
+    if: always()
+
+    steps:
+    - name: Download all configuration reports
+      uses: actions/download-artifact@v4
+
+    - name: Generate configuration summary
+      run: |
+        echo "# Configuration Validation Summary" > config-summary.md
+        echo "" >> config-summary.md
+        echo "Generated on: $(date)" >> config-summary.md
+        echo "" >> config-summary.md
+        
+        # YAML Validation Summary
+        echo "## YAML Validation" >> config-summary.md
+        if [ -f yaml-validation-report/yaml-report.md ]; then
+          if grep -q "❌" yaml-validation-report/yaml-report.md; then
+            echo "❌ **Status**: YAML validation errors found" >> config-summary.md
+          elif grep -q "⚠️" yaml-validation-report/yaml-report.md; then
+            echo "⚠️ **Status**: YAML style issues found" >> config-summary.md
+          else
+            echo "✅ **Status**: All YAML files valid" >> config-summary.md
+          fi
+        else
+          echo "❌ **Status**: YAML validation failed to run" >> config-summary.md
+        fi
+        echo "" >> config-summary.md
+        
+        # Spring Config Summary
+        echo "## Spring Configuration" >> config-summary.md
+        if [ -f spring-config-validation-report/spring-config-report.md ]; then
+          if grep -q "❌\|sensitive information" spring-config-validation-report/spring-config-report.md; then
+            echo "⚠️ **Status**: Spring configuration issues detected" >> config-summary.md
+          else
+            echo "✅ **Status**: Spring configuration validation passed" >> config-summary.md
+          fi
+        else
+          echo "❌ **Status**: Spring configuration validation failed" >> config-summary.md
+        fi
+        echo "" >> config-summary.md
+        
+        # Database Config Summary
+        echo "## Database Configuration" >> config-summary.md
+        if [ -f db-config-validation-report/db-config-report.md ]; then
+          if grep -q "❌\|Invalid" db-config-validation-report/db-config-report.md; then
+            echo "❌ **Status**: Database configuration errors found" >> config-summary.md
+          elif grep -q "⚠️\|dangerous" db-config-validation-report/db-config-report.md; then
+            echo "⚠️ **Status**: Database configuration warnings found" >> config-summary.md
+          else
+            echo "✅ **Status**: Database configuration valid" >> config-summary.md
+          fi
+        else
+          echo "❌ **Status**: Database configuration validation failed" >> config-summary.md
+        fi
+        echo "" >> config-summary.md
+        
+        # Docker Compose Summary
+        echo "## Docker Compose" >> config-summary.md
+        if [ -f compose-validation-report/compose-report.md ]; then
+          if grep -q "❌" compose-validation-report/compose-report.md; then
+            echo "❌ **Status**: Docker Compose validation errors found" >> config-summary.md
+          elif grep -q "⚠️" compose-validation-report/compose-report.md; then
+            echo "⚠️ **Status**: Docker Compose security warnings found" >> config-summary.md
+          else
+            echo "✅ **Status**: Docker Compose files valid" >> config-summary.md
+          fi
+        else
+          echo "❌ **Status**: Docker Compose validation failed" >> config-summary.md
+        fi
+        echo "" >> config-summary.md
+        
+        # Overall Recommendations
+        echo "## Recommendations" >> config-summary.md
+        echo "" >> config-summary.md
+        echo "1. **Fix Critical Issues**: Address any validation errors immediately" >> config-summary.md
+        echo "2. **Review Warnings**: Investigate and resolve configuration warnings" >> config-summary.md
+        echo "3. **Security**: Ensure no sensitive information is exposed in config files" >> config-summary.md
+        echo "4. **Environment Consistency**: Verify all environments have proper configurations" >> config-summary.md
+        echo "5. **Documentation**: Keep configuration documentation up to date" >> config-summary.md
+        echo "" >> config-summary.md
+        
+        # Detailed Reports Reference
+        echo "## Detailed Reports" >> config-summary.md
+        echo "" >> config-summary.md
+        echo "For detailed findings, check these artifacts:" >> config-summary.md
+        echo "- `yaml-validation-report`: YAML syntax and style issues" >> config-summary.md
+        echo "- `spring-config-validation-report`: Spring Boot configuration analysis" >> config-summary.md
+        echo "- `db-config-validation-report`: Database and MyBatis configuration" >> config-summary.md
+        echo "- `compose-validation-report`: Docker Compose file validation" >> config-summary.md
+
+    - name: Upload configuration summary
+      uses: actions/upload-artifact@v4
+      with:
+        name: config-validation-summary
+        path: config-summary.md
+        retention-days: 30

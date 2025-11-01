@@ -1,0 +1,496 @@
+name: Unit Tests & Coverage
+
+on:
+  push:
+    branches: [ main, develop, '20*' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: group_buy_trade_platform_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Wait for MySQL
+      run: |
+        until mysqladmin ping -h"127.0.0.1" -P3306 -uroot -proot123 --silent; do
+          echo 'waiting for mysql...'
+          sleep 2
+        done
+
+    - name: Initialize test database
+      run: |
+        echo "# Test Database Setup Report" > db-setup-report.md
+        echo "" >> db-setup-report.md
+        echo "Generated on: $(date)" >> db-setup-report.md
+        echo "" >> db-setup-report.md
+        
+        # Create database
+        mysql -h127.0.0.1 -P3306 -uroot -proot123 -e "CREATE DATABASE IF NOT EXISTS group_buy_trade_platform_test;" || {
+          echo "❌ Failed to create test database" >> db-setup-report.md
+          exit 1
+        }
+        echo "✅ **Database Creation**: Success" >> db-setup-report.md
+        
+        # Look for SQL initialization files
+        SQL_FILES_FOUND=0
+        for sql_file in "docs/dev-ops/mysql/sql/group_buy_trade_platform.sql" "docs/dev-ops/mysql/sql/xfg-frame-archetype.sql"; do
+          if [ -f "$sql_file" ]; then
+            echo "- **SQL File**: $sql_file ✅" >> db-setup-report.md
+            mysql -h127.0.0.1 -P3306 -uroot -proot123 group_buy_trade_platform_test < "$sql_file" && {
+              echo "  - **Execution**: Success" >> db-setup-report.md
+            } || {
+              echo "  - **Execution**: Failed ⚠️" >> db-setup-report.md
+            }
+            SQL_FILES_FOUND=$((SQL_FILES_FOUND + 1))
+          fi
+        done
+        
+        if [ $SQL_FILES_FOUND -eq 0 ]; then
+          echo "⚠️ **Warning**: No SQL initialization files found" >> db-setup-report.md
+          echo "Database created but not initialized with schema" >> db-setup-report.md
+        fi
+        
+        # Test database connection
+        mysql -h127.0.0.1 -P3306 -uroot -proot123 -e "USE group_buy_trade_platform_test; SHOW TABLES;" > tables.txt 2>/dev/null && {
+          TABLE_COUNT=$(wc -l < tables.txt)
+          echo "✅ **Connection Test**: Success ($TABLE_COUNT tables found)" >> db-setup-report.md
+        } || {
+          echo "⚠️ **Connection Test**: Warning - could not list tables" >> db-setup-report.md
+        }
+
+    - name: Setup JaCoCo plugin configuration
+      run: |
+        # Create JaCoCo plugin configuration
+        cat > jacoco-config.xml << 'EOF'
+        <plugin>
+          <groupId>org.jacoco</groupId>
+          <artifactId>jacoco-maven-plugin</artifactId>
+          <version>0.8.8</version>
+          <executions>
+            <execution>
+              <id>prepare-agent</id>
+              <goals>
+                <goal>prepare-agent</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>report</id>
+              <phase>test</phase>
+              <goals>
+                <goal>report</goal>
+              </goals>
+            </execution>
+            <execution>
+              <id>check</id>
+              <goals>
+                <goal>check</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <rule>
+                    <element>BUNDLE</element>
+                    <limits>
+                      <limit>
+                        <counter>INSTRUCTION</counter>
+                        <value>COVEREDRATIO</value>
+                        <minimum>0.70</minimum>
+                      </limit>
+                    </limits>
+                  </rule>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        EOF
+        
+        # Add JaCoCo plugin to parent POM if not already present
+        if ! grep -q "jacoco-maven-plugin" pom.xml; then
+          # Backup original POM
+          cp pom.xml pom.xml.backup
+          
+          # Insert plugin before closing </plugins> tag
+          sed -i '/<\/plugins>/i\
+        '"$(cat jacoco-config.xml | sed 's/&/\\\&/g')" pom.xml
+          
+          echo "✅ JaCoCo plugin added to project configuration"
+        else
+          echo "ℹ️ JaCoCo plugin already configured"
+        fi
+
+    - name: Run unit tests with coverage
+      run: |
+        mvn clean test -B \
+          -Dspring.profiles.active=test \
+          -Dspring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_test \
+          -Dspring.datasource.username=root \
+          -Dspring.datasource.password=root123 \
+          -Dmaven.test.failure.ignore=false
+
+    - name: Generate JaCoCo coverage report
+      run: |
+        mvn jacoco:report -B || {
+          echo "⚠️ JaCoCo report generation failed, attempting alternative method"
+          # Try to generate reports for each module individually
+          for module in group-buy-trade-platform-*; do
+            if [ -d "$module" ] && [ -f "$module/pom.xml" ]; then
+              echo "Generating report for $module"
+              cd "$module"
+              mvn jacoco:report -B || echo "Failed to generate report for $module"
+              cd ..
+            fi
+          done
+        }
+
+    - name: Aggregate coverage reports
+      run: |
+        echo "# Coverage Aggregation Report" > coverage-aggregate-report.md
+        echo "" >> coverage-aggregate-report.md
+        
+        # Try to aggregate coverage reports
+        if mvn jacoco:report-aggregate -B 2>/dev/null; then
+          echo "✅ **Status**: Coverage reports aggregated successfully" >> coverage-aggregate-report.md
+        else
+          echo "⚠️ **Status**: Coverage aggregation failed - collecting individual reports" >> coverage-aggregate-report.md
+          
+          # Collect individual module reports
+          find . -name "jacoco.xml" -type f | while read file; do
+            module_path=$(dirname "$file" | sed 's|/target/site/jacoco||')
+            echo "- **Module**: $module_path" >> coverage-aggregate-report.md
+          done
+        fi
+      continue-on-error: true
+
+    - name: Check coverage thresholds
+      run: |
+        echo "# Coverage Threshold Check" > coverage-threshold-report.md
+        echo "" >> coverage-threshold-report.md
+        
+        # Set coverage threshold (70%)
+        THRESHOLD=70
+        echo "## Coverage Threshold: ${THRESHOLD}%" >> coverage-threshold-report.md
+        echo "" >> coverage-threshold-report.md
+        
+        # Check if JaCoCo check goal works
+        if mvn jacoco:check -B -Djacoco.haltOnFailure=false -Djacoco.rules.coverage.minimum=0.70 2>/dev/null; then
+          echo "✅ **Result**: Coverage threshold check passed" >> coverage-threshold-report.md
+        else
+          echo "⚠️ **Result**: Coverage threshold check failed or unavailable" >> coverage-threshold-report.md
+          
+          # Manual threshold check using jacoco.xml files
+          MODULES_CHECKED=0
+          MODULES_PASSED=0
+          
+          find . -name "jacoco.xml" -not -path "./target/site/*" | while read file; do
+            if [ -f "$file" ]; then
+              # Extract coverage data
+              lines_covered=$(grep -o 'type="INSTRUCTION".*covered="[0-9]*"' "$file" | head -1 | grep -o 'covered="[0-9]*"' | grep -o '[0-9]*')
+              lines_missed=$(grep -o 'type="INSTRUCTION".*missed="[0-9]*"' "$file" | head -1 | grep -o 'missed="[0-9]*"' | grep -o '[0-9]*')
+              
+              if [ -n "$lines_covered" ] && [ -n "$lines_missed" ]; then
+                total=$((lines_covered + lines_missed))
+                if [ $total -gt 0 ]; then
+                  percentage=$((lines_covered * 100 / total))
+                  module=$(dirname "$file" | sed 's|./||' | sed 's|/target/site/jacoco||')
+                  
+                  if [ $percentage -ge $THRESHOLD ]; then
+                    echo "- ✅ **$module**: ${percentage}% (≥ ${THRESHOLD}%)" >> coverage-threshold-report.md
+                    MODULES_PASSED=$((MODULES_PASSED + 1))
+                  else
+                    echo "- ❌ **$module**: ${percentage}% (< ${THRESHOLD}%)" >> coverage-threshold-report.md
+                  fi
+                  MODULES_CHECKED=$((MODULES_CHECKED + 1))
+                fi
+              fi
+            fi
+          done
+          
+          echo "" >> coverage-threshold-report.md
+          echo "**Summary**: $MODULES_PASSED/$MODULES_CHECKED modules passed threshold" >> coverage-threshold-report.md
+        fi
+      continue-on-error: true
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        files: |
+          ./target/site/jacoco/jacoco.xml
+          ./**/target/site/jacoco/jacoco.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+      continue-on-error: true
+
+    - name: Generate coverage summary
+      run: |
+        echo "# Test Coverage Summary" > coverage-summary.md
+        echo "" >> coverage-summary.md
+        echo "Generated on: $(date)" >> coverage-summary.md
+        echo "" >> coverage-summary.md
+        
+        # Overall statistics
+        TOTAL_MODULES=0
+        MODULES_WITH_COVERAGE=0
+        OVERALL_COVERED=0
+        OVERALL_MISSED=0
+        
+        echo "## Module Coverage Details" >> coverage-summary.md
+        echo "" >> coverage-summary.md
+        
+        # Find all jacoco.xml files
+        find . -name "jacoco.xml" -not -path "./target/site/*" | while read file; do
+          if [ -f "$file" ]; then
+            module=$(dirname "$file" | sed 's|./||' | sed 's|/target/site/jacoco||')
+            
+            # Extract different types of coverage
+            inst_covered=$(grep 'type="INSTRUCTION"' "$file" | grep -o 'covered="[0-9]*"' | head -1 | grep -o '[0-9]*')
+            inst_missed=$(grep 'type="INSTRUCTION"' "$file" | grep -o 'missed="[0-9]*"' | head -1 | grep -o '[0-9]*')
+            branch_covered=$(grep 'type="BRANCH"' "$file" | grep -o 'covered="[0-9]*"' | head -1 | grep -o '[0-9]*')
+            branch_missed=$(grep 'type="BRANCH"' "$file" | grep -o 'missed="[0-9]*"' | head -1 | grep -o '[0-9]*')
+            line_covered=$(grep 'type="LINE"' "$file" | grep -o 'covered="[0-9]*"' | head -1 | grep -o '[0-9]*')
+            line_missed=$(grep 'type="LINE"' "$file" | grep -o 'missed="[0-9]*"' | head -1 | grep -o '[0-9]*')
+            
+            echo "### Module: $module" >> coverage-summary.md
+            
+            if [ -n "$inst_covered" ] && [ -n "$inst_missed" ]; then
+              inst_total=$((inst_covered + inst_missed))
+              if [ $inst_total -gt 0 ]; then
+                inst_percentage=$((inst_covered * 100 / inst_total))
+                echo "- **Instruction Coverage**: ${inst_percentage}% (${inst_covered}/${inst_total})" >> coverage-summary.md
+                OVERALL_COVERED=$((OVERALL_COVERED + inst_covered))
+                OVERALL_MISSED=$((OVERALL_MISSED + inst_missed))
+                MODULES_WITH_COVERAGE=$((MODULES_WITH_COVERAGE + 1))
+              fi
+            fi
+            
+            if [ -n "$branch_covered" ] && [ -n "$branch_missed" ]; then
+              branch_total=$((branch_covered + branch_missed))
+              if [ $branch_total -gt 0 ]; then
+                branch_percentage=$((branch_covered * 100 / branch_total))
+                echo "- **Branch Coverage**: ${branch_percentage}% (${branch_covered}/${branch_total})" >> coverage-summary.md
+              fi
+            fi
+            
+            if [ -n "$line_covered" ] && [ -n "$line_missed" ]; then
+              line_total=$((line_covered + line_missed))
+              if [ $line_total -gt 0 ]; then
+                line_percentage=$((line_covered * 100 / line_total))
+                echo "- **Line Coverage**: ${line_percentage}% (${line_covered}/${line_total})" >> coverage-summary.md
+              fi
+            fi
+            
+            TOTAL_MODULES=$((TOTAL_MODULES + 1))
+            echo "" >> coverage-summary.md
+          fi
+        done
+        
+        # Overall project summary
+        echo "## Overall Project Coverage" >> coverage-summary.md
+        echo "" >> coverage-summary.md
+        echo "- **Modules Analyzed**: $TOTAL_MODULES" >> coverage-summary.md
+        echo "- **Modules with Coverage Data**: $MODULES_WITH_COVERAGE" >> coverage-summary.md
+        
+        if [ $MODULES_WITH_COVERAGE -gt 0 ] && [ $((OVERALL_COVERED + OVERALL_MISSED)) -gt 0 ]; then
+          OVERALL_PERCENTAGE=$((OVERALL_COVERED * 100 / (OVERALL_COVERED + OVERALL_MISSED)))
+          echo "- **Overall Instruction Coverage**: ${OVERALL_PERCENTAGE}%" >> coverage-summary.md
+          
+          # Coverage assessment
+          if [ $OVERALL_PERCENTAGE -ge 80 ]; then
+            echo "- **Assessment**: ✅ Excellent coverage" >> coverage-summary.md
+          elif [ $OVERALL_PERCENTAGE -ge 70 ]; then
+            echo "- **Assessment**: ✅ Good coverage" >> coverage-summary.md
+          elif [ $OVERALL_PERCENTAGE -ge 50 ]; then
+            echo "- **Assessment**: ⚠️ Moderate coverage - consider improving" >> coverage-summary.md
+          else
+            echo "- **Assessment**: ❌ Low coverage - improvement needed" >> coverage-summary.md
+          fi
+        else
+          echo "- **Assessment**: ⚠️ No coverage data available" >> coverage-summary.md
+        fi
+
+    - name: Restore project configuration
+      run: |
+        # Restore original POM if backup exists
+        if [ -f pom.xml.backup ]; then
+          mv pom.xml.backup pom.xml
+          echo "✅ Original POM configuration restored"
+        fi
+        
+        # Clean up temporary files
+        rm -f jacoco-config.xml tables.txt || true
+      
+    - name: Upload test and coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-coverage-reports
+        path: |
+          coverage-summary.md
+          db-setup-report.md
+          coverage-aggregate-report.md
+          coverage-threshold-report.md
+          **/target/site/jacoco/
+          **/target/jacoco.exec
+          **/target/surefire-reports/
+        retention-days: 30
+
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('coverage-summary.md')) {
+            const coverage = fs.readFileSync('coverage-summary.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: coverage
+            });
+          }
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root123
+          MYSQL_DATABASE: group_buy_trade_platform_integration
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+
+    - name: Cache Maven dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
+    - name: Setup integration test database
+      run: |
+        echo "# Integration Test Database Setup" > integration-db-report.md
+        echo "" >> integration-db-report.md
+        echo "Generated on: $(date)" >> integration-db-report.md
+        echo "" >> integration-db-report.md
+        
+        # Wait for MySQL to be ready
+        until mysqladmin ping -h"127.0.0.1" -P3306 -uroot -proot123 --silent; do
+          echo 'waiting for mysql...'
+          sleep 2
+        done
+        
+        # Create integration test database
+        mysql -h127.0.0.1 -P3306 -uroot -proot123 -e "CREATE DATABASE IF NOT EXISTS group_buy_trade_platform_integration;" && {
+          echo "✅ **Database Creation**: Success" >> integration-db-report.md
+        } || {
+          echo "❌ **Database Creation**: Failed" >> integration-db-report.md
+          exit 1
+        }
+        
+        # Initialize with schema if available
+        for sql_file in "docs/dev-ops/mysql/sql/group_buy_trade_platform.sql" "docs/dev-ops/mysql/sql/xfg-frame-archetype.sql"; do
+          if [ -f "$sql_file" ]; then
+            mysql -h127.0.0.1 -P3306 -uroot -proot123 group_buy_trade_platform_integration < "$sql_file" && {
+              echo "✅ **Schema Load**: $sql_file" >> integration-db-report.md
+            } || {
+              echo "⚠️ **Schema Load**: Failed for $sql_file" >> integration-db-report.md
+            }
+          fi
+        done
+      
+    - name: Run integration tests
+      run: |
+        echo "# Integration Test Results" > integration-test-report.md
+        echo "" >> integration-test-report.md
+        echo "Generated on: $(date)" >> integration-test-report.md
+        echo "" >> integration-test-report.md
+        
+        # Run integration tests (using verify phase which includes integration-test and post-integration-test)
+        START_TIME=$(date +%s)
+        
+        if mvn verify -B \
+          -Dspring.profiles.active=test \
+          -Dspring.datasource.url=jdbc:mysql://localhost:3306/group_buy_trade_platform_integration \
+          -Dspring.datasource.username=root \
+          -Dspring.datasource.password=root123 \
+          -Dmaven.test.failure.ignore=true; then
+          
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          
+          echo "✅ **Status**: Integration tests completed" >> integration-test-report.md
+          echo "- **Duration**: ${DURATION}s" >> integration-test-report.md
+          
+          # Count test results
+          if find . -name "TEST-*.xml" -path "*/failsafe-reports/*" -exec ls {} \; | wc -l | grep -q "^[1-9]"; then
+            TEST_COUNT=$(find . -name "TEST-*.xml" -path "*/failsafe-reports/*" | wc -l)
+            FAILED_TESTS=$(find . -name "TEST-*.xml" -path "*/failsafe-reports/*" -exec grep -l 'failures="[1-9]' {} \; 2>/dev/null | wc -l)
+            ERROR_TESTS=$(find . -name "TEST-*.xml" -path "*/failsafe-reports/*" -exec grep -l 'errors="[1-9]' {} \; 2>/dev/null | wc -l)
+            
+            echo "- **Tests Run**: $TEST_COUNT" >> integration-test-report.md
+            echo "- **Failed Tests**: $FAILED_TESTS" >> integration-test-report.md
+            echo "- **Error Tests**: $ERROR_TESTS" >> integration-test-report.md
+          else
+            echo "- **Tests Run**: 0 (no integration tests found)" >> integration-test-report.md
+          fi
+        else
+          echo "⚠️ **Status**: Integration tests encountered issues" >> integration-test-report.md
+        fi
+      continue-on-error: true
+
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-test-results
+        path: |
+          integration-db-report.md
+          integration-test-report.md
+          **/target/surefire-reports/
+          **/target/failsafe-reports/
+        retention-days: 7

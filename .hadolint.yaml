@@ -1,0 +1,21 @@
+ignored:
+  # Package management rules that are too strict for development
+  - DL3008  # Pin versions in apt get install
+  - DL3009  # Delete the apt-get lists after installing something  
+  - DL3015  # Avoid additional packages by specifying `--no-install-recommends`
+  - DL3027  # Do not use apt as it is meant to be a end-user tool
+  
+  # Shell and syntax rules that are too restrictive
+  - DL3025  # Use arguments JSON notation for CMD and ENTRYPOINT arguments
+  - DL4006  # Set the SHELL option -o pipefail before RUN with a pipe in it
+  - SC2086  # Double quote to prevent globbing and word splitting
+  - SC1091  # Not following sourced file
+  
+  # Image rules that may not apply to all use cases
+  - DL3059  # Multiple consecutive RUN instructions
+  
+# Only fail the build on actual errors, not warnings
+failure-threshold: error
+
+# Allow warnings but don't fail builds
+warning-threshold: warning
