@@ -15,10 +15,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 8
+    - name: Set up JDK 11 for Google Java Format
       uses: actions/setup-java@v4
       with:
-        java-version: '8'
+        java-version: '11'
         distribution: 'temurin'
 
     - name: Cache Maven dependencies
@@ -30,8 +30,12 @@ jobs:
 
     - name: Check Google Java Format
       run: |
-        # Download Google Java Format (Java 8 compatible version)
-        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.15.0/google-java-format-1.15.0-all-deps.jar
+        # Verify Java version
+        echo "Java version in use:"
+        java -version
+        
+        # Download Google Java Format (latest version for Java 11+)
+        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar
         
         # Find all Java files
         find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" > java-files.txt
@@ -46,6 +50,7 @@ jobs:
           JAVA_FILE_COUNT=$(wc -l < java-files.txt)
           echo "## Files Checked" >> format-check-report.md
           echo "- **Total Java files**: $JAVA_FILE_COUNT" >> format-check-report.md
+          echo "- **Java Version**: $(java -version 2>&1 | head -1)" >> format-check-report.md
           echo "" >> format-check-report.md
           
           echo "Checking Java code format..."
@@ -97,10 +102,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 8
+    - name: Set up JDK 11 for Spotless
       uses: actions/setup-java@v4
       with:
-        java-version: '8'
+        java-version: '11'
         distribution: 'temurin'
 
     - name: Cache Maven dependencies
@@ -125,7 +130,7 @@ jobs:
                 <include>src/test/java/**/*.java</include>
               </includes>
               <googleJavaFormat>
-                <version>1.15.0</version>
+                <version>1.19.2</version>
                 <style>GOOGLE</style>
               </googleJavaFormat>
               <removeUnusedImports/>
@@ -159,9 +164,14 @@ jobs:
 
     - name: Check with Spotless
       run: |
+        # Verify Java version
+        echo "Java version in use:"
+        java -version
+        
         echo "# Spotless Format Check Report" > spotless-report.md
         echo "" >> spotless-report.md
         echo "Generated on: $(date)" >> spotless-report.md
+        echo "- **Java Version**: $(java -version 2>&1 | head -1)" >> spotless-report.md
         echo "" >> spotless-report.md
         
         # Create a temporary POM with Spotless plugin
@@ -172,8 +182,17 @@ jobs:
           # Check if plugins section exists
           if grep -q "<plugins>" pom.xml; then
             # Insert plugin before closing </plugins> tag
-            sed -i '/<\/plugins>/i\
-        '"$(cat spotless-config.xml | sed 's/&/\\\&/g')" pom.xml
+            PLUGINS_LINE=$(grep -n "</plugins>" pom.xml | head -1 | cut -d: -f1)
+            if [ -n "$PLUGINS_LINE" ]; then
+              {
+                head -n $((PLUGINS_LINE - 1)) pom.xml
+                sed 's/^/        /' spotless-config.xml
+                tail -n +$PLUGINS_LINE pom.xml
+              } > pom_temp.xml && mv pom_temp.xml pom.xml
+              echo "Spotless plugin inserted successfully"
+            else
+              echo "⚠️ Could not find </plugins> tag in POM"
+            fi
             
             echo "## Spotless Plugin Configuration" >> spotless-report.md
             echo "- **Status**: Plugin added to POM temporarily" >> spotless-report.md
@@ -221,16 +240,20 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set up JDK 8
+    - name: Set up JDK 11 for Google Java Format
       uses: actions/setup-java@v4
       with:
-        java-version: '8'
+        java-version: '11'
         distribution: 'temurin'
 
     - name: Format code with Google Java Format
       run: |
-        # Download Google Java Format (Java 8 compatible version)
-        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.15.0/google-java-format-1.15.0-all-deps.jar
+        # Verify Java version
+        echo "Java version in use:"
+        java -version
+        
+        # Download Google Java Format (latest version for Java 11+)
+        wget -O google-java-format.jar https://github.com/google/google-java-format/releases/download/v1.19.2/google-java-format-1.19.2-all-deps.jar
         
         # Format all Java files
         find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" -exec java -jar google-java-format.jar --replace {} \;
@@ -273,10 +296,10 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 8
+    - name: Set up JDK 11 for CheckStyle
       uses: actions/setup-java@v4
       with:
-        java-version: '8'
+        java-version: '11'
         distribution: 'temurin'
 
     - name: Create CheckStyle configuration
@@ -365,8 +388,12 @@ jobs:
 
     - name: Run CheckStyle
       run: |
-        # Download CheckStyle (Java 8 compatible version)
-        wget -O checkstyle.jar https://github.com/checkstyle/checkstyle/releases/download/checkstyle-8.45.1/checkstyle-8.45.1-all.jar
+        # Verify Java version
+        echo "Java version in use:"
+        java -version
+        
+        # Download CheckStyle (Java 11+ compatible version)
+        wget -O checkstyle.jar https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar
         
         # Run CheckStyle on all Java files
         find . -name "*.java" -not -path "./target/*" -not -path "./.m2/*" > java-files.txt

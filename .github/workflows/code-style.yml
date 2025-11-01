@@ -277,8 +277,18 @@ jobs:
       run: |
         # Insert SpotBugs plugin to parent POM
         if [ -f pom.xml ]; then
-          sed -i '/<\/plugins>/i\
-        '"$(cat spotbugs-config.xml | sed 's/$/\\/' | tr -d '\n' | sed 's/\\$//')" pom.xml
+          # Find the line number of </plugins>
+          PLUGINS_LINE=$(grep -n "</plugins>" pom.xml | head -1 | cut -d: -f1)
+          if [ -n "$PLUGINS_LINE" ]; then
+            {
+              head -n $((PLUGINS_LINE - 1)) pom.xml
+              sed 's/^/        /' spotbugs-config.xml
+              tail -n +$PLUGINS_LINE pom.xml
+            } > pom_temp.xml && mv pom_temp.xml pom.xml
+            echo "SpotBugs plugin inserted successfully"
+          else
+            echo "⚠️ Could not find </plugins> tag in POM"
+          fi
           
           # Run SpotBugs
           mvn spotbugs:check -B || true

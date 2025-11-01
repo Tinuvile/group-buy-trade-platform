@@ -138,9 +138,42 @@ jobs:
           # Backup original POM
           cp pom.xml pom.xml.backup
           
-          # Insert plugin before closing </plugins> tag
-          sed -i '/<\/plugins>/i\
-        '"$(cat jacoco-config.xml | sed 's/&/\\\&/g')" pom.xml
+          # Use a simpler approach with awk to insert the plugin
+          # Find the line number of </plugins>
+          PLUGINS_LINE=$(grep -n "</plugins>" pom.xml | head -1 | cut -d: -f1)
+          
+          if [ -n "$PLUGINS_LINE" ]; then
+            # Create a temporary file with the plugin inserted
+            {
+              head -n $((PLUGINS_LINE - 1)) pom.xml
+              # Indent the JaCoCo plugin configuration properly
+              sed 's/^/        /' jacoco-config.xml
+              tail -n +$PLUGINS_LINE pom.xml
+            } > pom_with_jacoco.xml
+            
+            # Replace the original POM
+            mv pom_with_jacoco.xml pom.xml
+            echo "✅ JaCoCo plugin inserted at line $PLUGINS_LINE"
+          else
+            echo "⚠️ Could not find </plugins> tag, trying alternative approach..."
+            
+            # Alternative: append before </build> or </project>
+            if grep -q "</build>" pom.xml; then
+              BUILD_LINE=$(grep -n "</build>" pom.xml | head -1 | cut -d: -f1)
+              {
+                head -n $((BUILD_LINE - 1)) pom.xml
+                echo "        <plugins>"
+                sed 's/^/            /' jacoco-config.xml
+                echo "        </plugins>"
+                tail -n +$BUILD_LINE pom.xml
+              } > pom_with_jacoco.xml
+              mv pom_with_jacoco.xml pom.xml
+              echo "✅ JaCoCo plugin added to new plugins section"
+            else
+              echo "❌ Could not find suitable insertion point"
+              exit 1
+            fi
+          fi
           
           echo "✅ JaCoCo plugin added to project configuration"
         else
