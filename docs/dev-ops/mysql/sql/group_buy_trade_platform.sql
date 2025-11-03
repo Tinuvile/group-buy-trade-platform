@@ -113,8 +113,8 @@ DROP TABLE IF EXISTS `sku`;
 CREATE TABLE `sku`
 (
     `id`             int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-    `source`         varchar(8)       NOT NULL COMMENT '渠道',
-    `channel`        varchar(8)       NOT NULL COMMENT '来源',
+    `source`         varchar(8)       NOT NULL COMMENT '来源',
+    `channel`        varchar(8)       NOT NULL COMMENT '渠道',
     `goods_id`       varchar(16)      NOT NULL COMMENT '商品ID',
     `goods_name`     varchar(128)     NOT NULL COMMENT '商品名称',
     `original_price` decimal(10, 2)   NOT NULL COMMENT '商品价格',

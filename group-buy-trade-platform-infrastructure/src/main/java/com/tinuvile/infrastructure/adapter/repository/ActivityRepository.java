@@ -45,9 +45,17 @@ public class ActivityRepository implements IActivityRepository {
         groupBuyActivityReq.setChannel(channel);
         GroupBuyActivity groupBuyActivityRes = groupBuyActivityDao.queryValidGroupBuyActivity(groupBuyActivityReq);
 
+        if (groupBuyActivityRes == null) {
+            return null;
+        }
+
         String discountId = groupBuyActivityRes.getDiscountId();
 
         GroupBuyDiscount groupBuyDiscountRes = groupBuyDiscountDao.queryGroupBuyActivityDiscountByDiscountId(discountId);
+
+        if (groupBuyDiscountRes == null) {
+            return null;
+        }
 
         GroupBuyActivityDiscountVO.GroupBuyDiscount groupBuyDiscount = GroupBuyActivityDiscountVO.GroupBuyDiscount.builder()
                 .discountName(groupBuyDiscountRes.getDiscountName())
