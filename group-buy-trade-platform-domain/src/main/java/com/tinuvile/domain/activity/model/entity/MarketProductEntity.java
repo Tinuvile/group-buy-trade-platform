@@ -1,8 +1,10 @@
 package com.tinuvile.domain.activity.model.entity;
 
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @description 商品实体
@@ -11,6 +13,8 @@ import lombok.Data;
  */
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class MarketProductEntity {
     /* 用户ID */
     private String userId;

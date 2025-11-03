@@ -5,9 +5,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
+ * @description 团购活动折扣表
  * @author Tinuvile
  * @since 2025-10-30
  **/
@@ -42,8 +43,8 @@ public class GroupBuyDiscount {
     private String tagId;
 
     /* 创建时间 */
-    private LocalDateTime createTime;
+    private Date createTime;
 
     /* 更新时间 */
-    private LocalDateTime updateTime;
+    private Date updateTime;
 }
