@@ -1,0 +1,91 @@
+name: CI/CD Pipeline
+
+# 触发条件：PR到主分支或主分支直接提交
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. 检出代码
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    # 2. 设置Java环境
+    - name: 设置Java 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        
+    # 3. 缓存Maven依赖
+    - name: 缓存Maven依赖
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    # 4. 启动基础设施服务 (MySQL, Redis等)
+    - name: 启动Docker Compose环境
+      run: |
+        cd docs/dev-ops
+        docker-compose -f docker-compose-environment.yml up -d
+        
+    # 5. 等待MySQL和Redis服务启动完成
+    - name: 等待服务启动
+      run: |
+        echo "等待MySQL启动..."
+        timeout 300s bash -c 'until docker exec mysql mysqladmin ping -h localhost --silent; do sleep 5; done'
+        echo "MySQL已启动"
+        
+        echo "等待Redis启动..."  
+        timeout 60s bash -c 'until docker exec redis redis-cli ping; do sleep 2; done'
+        echo "Redis已启动"
+        
+    # 6. 编译项目
+    - name: 编译项目
+      run: mvn clean compile -DskipTests=true
+      
+    # 7. 运行所有测试
+    - name: 运行测试
+      run: |
+        # 覆盖maven-surefire-plugin的skipTests配置，强制运行测试
+        mvn test -DskipTests=false -Dspring.profiles.active=test
+      env:
+        # 设置测试环境变量，连接到Docker容器中的服务
+        SPRING_DATASOURCE_URL: jdbc:mysql://localhost:13306/group_buy_trade_platform?useUnicode=true&characterEncoding=utf8&autoReconnect=true&serverTimezone=UTC
+        SPRING_DATASOURCE_USERNAME: root
+        SPRING_DATASOURCE_PASSWORD: 123456
+        SPRING_REDIS_HOST: localhost
+        SPRING_REDIS_PORT: 16379
+        
+    # 8. 生成测试报告
+    - name: 发布测试报告
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Maven测试报告
+        path: "**/target/surefire-reports/*.xml"
+        reporter: java-junit
+        fail-on-error: true
+        
+    # 9. 清理Docker环境
+    - name: 清理Docker环境  
+      if: always()
+      run: |
+        cd docs/dev-ops
+        docker-compose -f docker-compose-environment.yml down -v
+        
+    # 10. 上传测试覆盖率报告（可选）
+    - name: 上传覆盖率到Codecov
+      if: success()
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./target/site/jacoco/jacoco.xml
+        fail_ci_if_error: false
