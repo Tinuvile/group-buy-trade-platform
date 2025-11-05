@@ -15,7 +15,7 @@ import java.math.BigDecimal;
  * @since 2025/11/5
  */
 @Slf4j
-@Service
+@Service("NC")
 public class NCCalculateService extends AbstractDiscountCalculateService {
 
     @Override

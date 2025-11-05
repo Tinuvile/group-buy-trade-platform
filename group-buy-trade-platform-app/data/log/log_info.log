@@ -19,3 +19,23 @@
 25-11-05.21:06:04.618 [main            ] INFO  IIndexGroupBuyMarketServiceTest - 返回结果: {"deductionPrice":0.00,"endTime":1733537980000,"goodsId":"9890001","goodsName":"《手写MyBatis：渐进式源码实践》","isEnable":false,"isVisible":false,"originalPrice":100.00,"startTime":1733537980000,"targetCount":1}
 25-11-05.21:06:04.626 [SpringApplicationShutdownHook] INFO  HikariDataSource       - HikariPool-1 - Shutdown initiated...
 25-11-05.21:06:04.640 [SpringApplicationShutdownHook] INFO  HikariDataSource       - HikariPool-1 - Shutdown completed.
+25-11-05.21:57:53.596 [main            ] INFO  IIndexGroupBuyMarketServiceTest - Starting IIndexGroupBuyMarketServiceTest using Java 1.8.0_391 on LAPTOP-7PVP3HH3 with PID 35204 (started by ASUS in F:\group-buy-trade-platform\group-buy-trade-platform-app)
+25-11-05.21:57:53.597 [main            ] INFO  IIndexGroupBuyMarketServiceTest - The following 1 profile is active: "dev"
+25-11-05.21:57:55.241 [main            ] INFO  IIndexGroupBuyMarketServiceTest - Started IIndexGroupBuyMarketServiceTest in 2.015 seconds (JVM running for 2.761)
+25-11-05.21:57:55.418 [pool-2-thread-1 ] INFO  HikariDataSource       - HikariPool-1 - Starting...
+25-11-05.21:57:56.093 [pool-2-thread-1 ] INFO  HikariDataSource       - HikariPool-1 - Start completed.
+25-11-05.21:57:56.139 [main            ] INFO  MarketNode             - 拼团商品查询试算服务-MarketNode userId:Tinuvile requestParameter:MarketProductEntity(userId=Tinuvile, goodsId=9890001, source=s01, channel=c01)
+25-11-05.21:57:56.257 [main            ] INFO  MarketNode             - 不存在ZJ类型的折扣计算服务，支持类型为["MJCalculateService","NCCalculateService","ZJCalculateService","ZKCalculateService"]
+25-11-05.21:57:56.274 [SpringApplicationShutdownHook] INFO  HikariDataSource       - HikariPool-1 - Shutdown initiated...
+25-11-05.21:57:56.282 [SpringApplicationShutdownHook] INFO  HikariDataSource       - HikariPool-1 - Shutdown completed.
+25-11-05.22:04:30.847 [main            ] INFO  IIndexGroupBuyMarketServiceTest - Starting IIndexGroupBuyMarketServiceTest using Java 1.8.0_391 on LAPTOP-7PVP3HH3 with PID 8764 (started by ASUS in F:\group-buy-trade-platform\group-buy-trade-platform-app)
+25-11-05.22:04:30.848 [main            ] INFO  IIndexGroupBuyMarketServiceTest - The following 1 profile is active: "dev"
+25-11-05.22:04:32.509 [main            ] INFO  IIndexGroupBuyMarketServiceTest - Started IIndexGroupBuyMarketServiceTest in 2.02 seconds (JVM running for 2.708)
+25-11-05.22:04:32.686 [pool-2-thread-1 ] INFO  HikariDataSource       - HikariPool-1 - Starting...
+25-11-05.22:04:33.362 [pool-2-thread-1 ] INFO  HikariDataSource       - HikariPool-1 - Start completed.
+25-11-05.22:04:33.404 [main            ] INFO  MarketNode             - 拼团商品查询试算服务-MarketNode userId:Tinuvile requestParameter:MarketProductEntity(userId=Tinuvile, goodsId=9890001, source=s01, channel=c01)
+25-11-05.22:04:33.405 [main            ] INFO  ZJCalculateService     - 优惠策略折扣计算：0
+25-11-05.22:04:33.553 [main            ] INFO  IIndexGroupBuyMarketServiceTest - 请求参数: {"channel":"c01","goodsId":"9890001","source":"s01","userId":"Tinuvile"}
+25-11-05.22:04:33.559 [main            ] INFO  IIndexGroupBuyMarketServiceTest - 返回结果: {"deductionPrice":0.00,"endTime":1733537980000,"goodsId":"9890001","goodsName":"《手写MyBatis：渐进式源码实践》","isEnable":false,"isVisible":false,"originalPrice":100.00,"startTime":1733537980000,"targetCount":1}
+25-11-05.22:04:33.568 [SpringApplicationShutdownHook] INFO  HikariDataSource       - HikariPool-1 - Shutdown initiated...
+25-11-05.22:04:33.576 [SpringApplicationShutdownHook] INFO  HikariDataSource       - HikariPool-1 - Shutdown completed.
