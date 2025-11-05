@@ -4,6 +4,9 @@ package com.tinuvile.types.design.framework.tree;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 /**
  * @author Tinuvile
  * @description
@@ -26,7 +29,7 @@ public abstract class AbstractMultiThreadStrategyRouter<T, D, R> implements Stra
         return doApply(requestParameter, dynamicContext);
     }
 
-    protected abstract void multiThread(T requestParameter, D dynamicContext) throws Exception;
+    protected abstract void multiThread(T requestParameter, D dynamicContext) throws ExecutionException, InterruptedException, TimeoutException;
 
     protected abstract R doApply(T requestParameter, D dynamicContext) throws Exception;
 }
