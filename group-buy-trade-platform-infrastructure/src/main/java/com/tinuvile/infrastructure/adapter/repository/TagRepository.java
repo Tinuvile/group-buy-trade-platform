@@ -12,6 +12,7 @@ import com.tinuvile.infrastructure.dao.po.CrowdTagsJob;
 import com.tinuvile.infrastructure.redis.IRedisService;
 import org.redisson.api.RBitSet;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 
@@ -20,6 +21,7 @@ import javax.annotation.Resource;
  * @description 人群标签仓储
  * @since 2025/11/6
  */
+@Repository
 public class TagRepository implements ITagRepository {
 
     @Resource
@@ -64,7 +66,7 @@ public class TagRepository implements ITagRepository {
             RBitSet bitSet = redisService.getBitSet(tagId);
             bitSet.set(redisService.getIndexFromUserId(userId), true);
         } catch (DuplicateKeyException ignore) {
-            // 忽略唯一索引冲突
+            // 目前实现：忽略唯一索引冲突
         }
     }
 
