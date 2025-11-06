@@ -27,15 +27,6 @@ public class GroupBuyActivity {
     /* 活动名称 */
     private String activityName;
 
-    /* 来源 */
-    private String source;
-
-    /* 渠道 */
-    private String channel;
-
-    /* 商品ID */
-    private String goodsId;
-
     /* 折扣ID */
     private String discountId;
 

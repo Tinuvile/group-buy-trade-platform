@@ -30,26 +30,29 @@ use `group_buy_trade_platform`;
 
 DROP TABLE IF EXISTS `crowd_tags`;
 
-CREATE TABLE `crowd_tags` (
-                              `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-                              `tag_id` varchar(32) NOT NULL COMMENT '人群ID',
-                              `tag_name` varchar(64) NOT NULL COMMENT '人群名称',
-                              `tag_desc` varchar(256) NOT NULL COMMENT '人群描述',
-                              `statistics` int(8) NOT NULL COMMENT '人群标签统计量',
-                              `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                              `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                              PRIMARY KEY (`id`),
-                              UNIQUE KEY `uq_tag_id` (`tag_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='人群标签';
+CREATE TABLE `crowd_tags`
+(
+    `id`          int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `tag_id`      varchar(32)      NOT NULL COMMENT '人群ID',
+    `tag_name`    varchar(64)      NOT NULL COMMENT '人群名称',
+    `tag_desc`    varchar(256)     NOT NULL COMMENT '人群描述',
+    `statistics`  int(8)           NOT NULL COMMENT '人群标签统计量',
+    `create_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_tag_id` (`tag_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='人群标签';
 
 LOCK TABLES `crowd_tags` WRITE;
-/*!40000 ALTER TABLE `crowd_tags` DISABLE KEYS */;
+/*!40000 ALTER TABLE `crowd_tags`
+    DISABLE KEYS */;
 
 INSERT INTO `crowd_tags` (`id`, `tag_id`, `tag_name`, `tag_desc`, `statistics`, `create_time`, `update_time`)
-VALUES
-    (1,'RQ_KJHKL98UU78H66554GFDV','潜在消费用户','潜在消费用户',6,'2024-12-28 12:53:28','2024-12-28 16:58:45');
+VALUES (1, 'RQ_KJHKL98UU78H66554GFDV', '潜在消费用户', '潜在消费用户', 6, '2024-12-28 12:53:28', '2024-12-28 16:58:45');
 
-/*!40000 ALTER TABLE `crowd_tags` ENABLE KEYS */;
+/*!40000 ALTER TABLE `crowd_tags`
+    ENABLE KEYS */;
 UNLOCK TABLES;
 
 
@@ -58,25 +61,28 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `crowd_tags_detail`;
 
-CREATE TABLE `crowd_tags_detail` (
-                                     `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-                                     `tag_id` varchar(32) NOT NULL COMMENT '人群ID',
-                                     `user_id` varchar(16) NOT NULL COMMENT '用户ID',
-                                     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                                     PRIMARY KEY (`id`),
-                                     UNIQUE KEY `uq_tag_user` (`tag_id`,`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='人群标签明细';
+CREATE TABLE `crowd_tags_detail`
+(
+    `id`          int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `tag_id`      varchar(32)      NOT NULL COMMENT '人群ID',
+    `user_id`     varchar(16)      NOT NULL COMMENT '用户ID',
+    `create_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_tag_user` (`tag_id`, `user_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='人群标签明细';
 
 LOCK TABLES `crowd_tags_detail` WRITE;
-/*!40000 ALTER TABLE `crowd_tags_detail` DISABLE KEYS */;
+/*!40000 ALTER TABLE `crowd_tags_detail`
+    DISABLE KEYS */;
 
 INSERT INTO `crowd_tags_detail` (`id`, `tag_id`, `user_id`, `create_time`, `update_time`)
-VALUES
-    (4,'RQ_KJHKL98UU78H66554GFDV','xiaofuge','2024-12-28 14:42:30','2024-12-28 14:42:30'),
-    (5,'RQ_KJHKL98UU78H66554GFDV','liergou','2024-12-28 14:42:30','2024-12-28 14:42:30');
+VALUES (4, 'RQ_KJHKL98UU78H66554GFDV', 'xiaofuge', '2024-12-28 14:42:30', '2024-12-28 14:42:30'),
+       (5, 'RQ_KJHKL98UU78H66554GFDV', 'liergou', '2024-12-28 14:42:30', '2024-12-28 14:42:30');
 
-/*!40000 ALTER TABLE `crowd_tags_detail` ENABLE KEYS */;
+/*!40000 ALTER TABLE `crowd_tags_detail`
+    ENABLE KEYS */;
 UNLOCK TABLES;
 
 
@@ -85,29 +91,34 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS `crowd_tags_job`;
 
-CREATE TABLE `crowd_tags_job` (
-                                  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-                                  `tag_id` varchar(32) NOT NULL COMMENT '标签ID',
-                                  `batch_id` varchar(8) NOT NULL COMMENT '批次ID',
-                                  `tag_type` tinyint(1) NOT NULL DEFAULT '1' COMMENT '标签类型（参与量、消费金额）',
-                                  `tag_rule` varchar(8) NOT NULL COMMENT '标签规则（限定类型 N次）',
-                                  `stat_start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '统计数据，开始时间',
-                                  `stat_end_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '统计数据，结束时间',
-                                  `status` tinyint(1) NOT NULL DEFAULT '0' COMMENT '状态；0初始、1计划（进入执行阶段）、2重置、3完成',
-                                  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                                  PRIMARY KEY (`id`),
-                                  UNIQUE KEY `uq_batch_id` (`batch_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='人群标签任务';
+CREATE TABLE `crowd_tags_job`
+(
+    `id`              int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `tag_id`          varchar(32)      NOT NULL COMMENT '标签ID',
+    `batch_id`        varchar(8)       NOT NULL COMMENT '批次ID',
+    `tag_type`        tinyint(1)       NOT NULL DEFAULT '1' COMMENT '标签类型（参与量、消费金额）',
+    `tag_rule`        varchar(8)       NOT NULL COMMENT '标签规则（限定类型 N次）',
+    `stat_start_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '统计数据，开始时间',
+    `stat_end_time`   datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '统计数据，结束时间',
+    `status`          tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态；0初始、1计划（进入执行阶段）、2重置、3完成',
+    `create_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_batch_id` (`batch_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='人群标签任务';
 
 LOCK TABLES `crowd_tags_job` WRITE;
-/*!40000 ALTER TABLE `crowd_tags_job` DISABLE KEYS */;
+/*!40000 ALTER TABLE `crowd_tags_job`
+    DISABLE KEYS */;
 
-INSERT INTO `crowd_tags_job` (`id`, `tag_id`, `batch_id`, `tag_type`, `tag_rule`, `stat_start_time`, `stat_end_time`, `status`, `create_time`, `update_time`)
-VALUES
-    (1,'RQ_KJHKL98UU78H66554GFDV','10001',0,'100','2024-12-28 12:55:05','2024-12-28 12:55:05',0,'2024-12-28 12:55:05','2024-12-28 12:55:05');
+INSERT INTO `crowd_tags_job` (`id`, `tag_id`, `batch_id`, `tag_type`, `tag_rule`, `stat_start_time`, `stat_end_time`,
+                              `status`, `create_time`, `update_time`)
+VALUES (1, 'RQ_KJHKL98UU78H66554GFDV', '10001', 0, '100', '2024-12-28 12:55:05', '2024-12-28 12:55:05', 0,
+        '2024-12-28 12:55:05', '2024-12-28 12:55:05');
 
-/*!40000 ALTER TABLE `crowd_tags_job` ENABLE KEYS */;
+/*!40000 ALTER TABLE `crowd_tags_job`
+    ENABLE KEYS */;
 UNLOCK TABLES;
 
 # 转储表 group_buy_activity
@@ -120,9 +131,6 @@ CREATE TABLE `group_buy_activity`
     `id`               bigint(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增',
     `activity_id`      bigint(8)           NOT NULL COMMENT '活动ID',
     `activity_name`    varchar(128)        NOT NULL COMMENT '活动名称',
-    `source`           varchar(8)          NOT NULL COMMENT '来源',
-    `channel`          varchar(8)          NOT NULL COMMENT '渠道',
-    `goods_id`         varchar(12)         NOT NULL COMMENT '商品ID',
     `discount_id`      varchar(8)          NOT NULL COMMENT '折扣ID',
     `group_type`       tinyint(1)          NOT NULL DEFAULT '0' COMMENT '拼团方式（0自动成团、1达成目标拼团）',
     `take_limit_count` int(4)              NOT NULL DEFAULT '1' COMMENT '拼团次数限制',
@@ -131,7 +139,7 @@ CREATE TABLE `group_buy_activity`
     `status`           tinyint(1)          NOT NULL DEFAULT '0' COMMENT '活动状态（0创建、1生效、2过期、3废弃）',
     `start_time`       datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '活动开始时间',
     `end_time`         datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '活动结束时间',
-    `tag_id`           varchar(8)                   DEFAULT NULL COMMENT '人群标签规则标识',
+    `tag_id`           varchar(32)                  DEFAULT NULL COMMENT '人群标签规则标识',
     `tag_scope`        varchar(4)                   DEFAULT NULL COMMENT '人群标签规则范围（多选；1可见限制、2参与限制）',
     `create_time`      datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`      datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -141,15 +149,17 @@ CREATE TABLE `group_buy_activity`
   DEFAULT CHARSET = utf8mb4 COMMENT ='拼团活动';
 
 LOCK TABLES `group_buy_activity` WRITE;
-/*!40000 ALTER TABLE `group_buy_activity` DISABLE KEYS */;
+/*!40000 ALTER TABLE `group_buy_activity`
+    DISABLE KEYS */;
 
-INSERT INTO `group_buy_activity` (`id`, `activity_id`, `activity_name`, `source`, `channel`, `goods_id`, `discount_id`,
-                                  `group_type`, `take_limit_count`, `target`, `valid_time`, `status`, `start_time`,
-                                  `end_time`, `tag_id`, `tag_scope`, `create_time`, `update_time`)
-VALUES (1, 100123, '测试活动', 's01', 'c01', '9890001', '25120207', 0, 1, 1, 15, 0, '2024-12-07 10:19:40',
-        '2024-12-07 10:19:40', '1', '1', '2024-12-07 10:19:40', '2024-12-07 11:47:27');
+INSERT INTO `group_buy_activity` (`id`, `activity_id`, `activity_name`, `discount_id`, `group_type`, `take_limit_count`,
+                                  `target`, `valid_time`, `status`, `start_time`, `end_time`, `tag_id`, `tag_scope`,
+                                  `create_time`, `update_time`)
+VALUES (1, 100123, '测试活动', '25120208', 0, 1, 1, 15, 1, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '1', '1',
+        '2024-12-07 10:19:40', '2025-01-01 18:27:47');
 
-/*!40000 ALTER TABLE `group_buy_activity` ENABLE KEYS */;
+/*!40000 ALTER TABLE `group_buy_activity`
+    ENABLE KEYS */;
 UNLOCK TABLES;
 
 
@@ -176,16 +186,53 @@ CREATE TABLE `group_buy_discount`
   DEFAULT CHARSET = utf8mb4;
 
 LOCK TABLES `group_buy_discount` WRITE;
-/*!40000 ALTER TABLE `group_buy_discount` DISABLE KEYS */;
+/*!40000 ALTER TABLE `group_buy_discount`
+    DISABLE KEYS */;
 
-INSERT INTO `group_buy_discount` (`id`, `discount_id`, `discount_name`, `discount_desc`, `discount_type`, `market_plan`, `market_expr`, `tag_id`, `create_time`, `update_time`)
-VALUES
-    (1,'25120207','直减优惠20元','直减优惠20元',0,'ZJ','20',NULL,'2024-12-07 10:20:15','2024-12-22 12:09:45'),
-    (2,'25120208','满减优惠100-10元','满减优惠100-10元',0,'MJ','100,10',NULL,'2024-12-07 10:20:15','2024-12-22 12:09:47'),
-    (4,'25120209','折扣优惠8折','折扣优惠8折',0,'ZK','0.8',NULL,'2024-12-07 10:20:15','2024-12-22 12:11:36'),
-    (5,'25120210','N元购买优惠','N元购买优惠',0,'N','1.99',NULL,'2024-12-07 10:20:15','2024-12-22 12:11:39');
+INSERT INTO `group_buy_discount` (`id`, `discount_id`, `discount_name`, `discount_desc`, `discount_type`, `market_plan`,
+                                  `market_expr`, `tag_id`, `create_time`, `update_time`)
+VALUES (1, '25120207', '直减优惠20元', '直减优惠20元', 0, 'ZJ', '20', NULL, '2024-12-07 10:20:15',
+        '2024-12-22 12:09:45'),
+       (2, '25120208', '满减优惠100-10元', '满减优惠100-10元', 0, 'MJ', '100,10', NULL, '2024-12-07 10:20:15',
+        '2024-12-22 12:09:47'),
+       (4, '25120209', '折扣优惠8折', '折扣优惠8折', 0, 'ZK', '0.8', NULL, '2024-12-07 10:20:15',
+        '2024-12-22 12:11:36'),
+       (5, '25120210', 'N元购买优惠', 'N元购买优惠', 0, 'N', '1.99', NULL, '2024-12-07 10:20:15',
+        '2024-12-22 12:11:39');
 
-/*!40000 ALTER TABLE `group_buy_discount` ENABLE KEYS */;
+/*!40000 ALTER TABLE `group_buy_discount`
+    ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+# 转储表 sc_sku_activity
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `sc_sku_activity`;
+
+CREATE TABLE `sc_sku_activity`
+(
+    `id`          int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `source`      varchar(8)       NOT NULL COMMENT '来源',
+    `channel`     varchar(8)       NOT NULL COMMENT '渠道',
+    `activity_id` bigint(8)        NOT NULL COMMENT '活动ID',
+    `goods_id`    varchar(16)      NOT NULL COMMENT '商品ID',
+    `create_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uq_sc_goodsid` (`source`, `channel`, `goods_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='渠道商品活动配置关联表';
+
+LOCK TABLES `sc_sku_activity` WRITE;
+/*!40000 ALTER TABLE `sc_sku_activity`
+    DISABLE KEYS */;
+
+INSERT INTO `sc_sku_activity` (`id`, `source`, `channel`, `activity_id`, `goods_id`, `create_time`, `update_time`)
+VALUES (1, 's01', 'c01', 100123, '9890001', '2025-01-01 13:15:54', '2025-01-01 13:15:54');
+
+/*!40000 ALTER TABLE `sc_sku_activity`
+    ENABLE KEYS */;
 UNLOCK TABLES;
 
 
@@ -210,7 +257,8 @@ CREATE TABLE `sku`
   DEFAULT CHARSET = utf8mb4 COMMENT ='商品信息';
 
 LOCK TABLES `sku` WRITE;
-/*!40000 ALTER TABLE `sku` DISABLE KEYS */;
+/*!40000 ALTER TABLE `sku`
+    DISABLE KEYS */;
 
 INSERT INTO `sku` (`id`, `source`, `channel`, `goods_id`, `goods_name`, `original_price`, `create_time`, `update_time`)
 VALUES (1, 's01', 'c01', '9890001', '《手写MyBatis：渐进式源码实践》', 100.00, '2024-12-21 11:10:06',
