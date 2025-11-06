@@ -1,0 +1,32 @@
+package com.tinuvile.domain.activity.model.valobj;
+
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+/**
+ * @author Tinuvile
+ * @description
+ * @since 2025/11/6
+ */
+@Getter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class SCSkuActivityVO {
+
+    /** 来源 */
+    private String source;
+
+    /** 渠道 */
+    private String chanel;
+
+    /** 活动ID */
+    private Long activityId;
+
+    /** 商品ID */
+    private String goodsId;
+
+}
