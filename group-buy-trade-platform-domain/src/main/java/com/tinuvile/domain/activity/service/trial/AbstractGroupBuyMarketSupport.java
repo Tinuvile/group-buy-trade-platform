@@ -15,7 +15,7 @@ import java.util.concurrent.TimeoutException;
  */
 public abstract class AbstractGroupBuyMarketSupport<MarketProductEntity, DynamicContext, TrialBalanceEntity> extends AbstractMultiThreadStrategyRouter<com.tinuvile.domain.activity.model.entity.MarketProductEntity, DefaultActivityStrategyFactory.DynamicContext, com.tinuvile.domain.activity.model.entity.TrialBalanceEntity> {
 
-    protected long timeout = 1000;
+    protected long timeout = 5000;
 
     @Resource
     protected IActivityRepository repository;
