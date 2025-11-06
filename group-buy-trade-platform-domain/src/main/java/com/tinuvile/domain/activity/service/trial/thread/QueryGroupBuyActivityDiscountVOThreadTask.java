@@ -32,7 +32,7 @@ public class QueryGroupBuyActivityDiscountVOThreadTask implements Callable<Group
     @Override
     public GroupBuyActivityDiscountVO call() throws Exception {
         SCSkuActivityVO scSkuActivityVO = repository.querySCSkuActivityByGoodsId(source, channel, goodsId);
-        if (null ==  scSkuActivityVO) {
+        if (null == scSkuActivityVO) {
             return null;
         }
 

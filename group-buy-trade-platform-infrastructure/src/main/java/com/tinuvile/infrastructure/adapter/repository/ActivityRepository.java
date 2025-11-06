@@ -116,7 +116,7 @@ public class ActivityRepository implements IActivityRepository {
 
         return SCSkuActivityVO.builder()
                 .source(scSkuActivityRes.getSource())
-                .chanel(scSkuActivityRes.getChannel())
+                .channel(scSkuActivityRes.getChannel())
                 .activityId(scSkuActivityRes.getActivityId())
                 .goodsId(scSkuActivityRes.getGoodsId())
                 .build();

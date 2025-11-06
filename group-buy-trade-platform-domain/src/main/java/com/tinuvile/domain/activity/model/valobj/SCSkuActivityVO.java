@@ -21,7 +21,7 @@ public class SCSkuActivityVO {
     private String source;
 
     /** 渠道 */
-    private String chanel;
+    private String channel;
 
     /** 活动ID */
     private Long activityId;
