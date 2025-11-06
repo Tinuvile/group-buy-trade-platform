@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @author Tinuvile
- * @description Redis服务 - Redission
+ * @description Redis服务 - Redisson
  * @since 2025/11/6
  */
 @Service("redissonService")

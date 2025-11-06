@@ -28,7 +28,7 @@ public interface IRedisService {
      *
      * @param key     键
      * @param value   值
-     * @param expired 过期时间
+     * @param expired 过期时间（毫秒）
      */
     <T> void setValue(String key, T value, long expired);
 
@@ -102,15 +102,15 @@ public interface IRedisService {
      * 自减 Key 的值；1、2、3、4
      *
      * @param key 键
-     * @return 自增后的值
+     * @return 自减后的值
      */
     long decr(String key);
 
     /**
-     * 指定值，自增 Key 的值；1、2、3、4
+     * 指定值，自减 Key 的值；1、2、3、4
      *
      * @param key 键
-     * @return 自增后的值
+     * @return 自减后的值
      */
     long decrBy(String key, long delta);
 
