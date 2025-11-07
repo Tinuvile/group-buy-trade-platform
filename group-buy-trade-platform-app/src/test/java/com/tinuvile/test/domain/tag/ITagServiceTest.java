@@ -39,4 +39,10 @@ public class ITagServiceTest {
         log.info("Tinuvile存在，预期结果为true，测试结果：{}", bitSet.get(redisService.getIndexFromUserId("Tinuvile")));
         log.info("Erechamion不存在，预期结果为false，测试结果：{}", bitSet.get(redisService.getIndexFromUserId("Erechamion")));
     }
+
+    @Test
+    public void test_03_null_tag_bitmap() {
+        RBitSet bitSet = redisService.getBitSet("null");
+        log.info("测试结果:{}", bitSet.isExists());
+    }
 }
