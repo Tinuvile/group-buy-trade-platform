@@ -28,17 +28,21 @@ spring:
     connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
     connection-test-query: SELECT 1
   type: com.zaxxer.hikari.HikariDataSource
-  redis:
-    host: ${SPRING_REDIS_HOST:localhost}
-    port: ${SPRING_REDIS_PORT:16379}
-    pool-size: 10
-    min-idle-size: 5
-    idle-timeout: 30000
-    connect-timeout: 5000
-    retry-attempts: 3
-    retry-interval: 1000
-    ping-interval: 60000
-    keep-alive: true
+
+# Redis配置
+redis:
+  sdk:
+    config:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:16379}
+      pool-size: 10
+      min-idle-size: 5
+      idle-timeout: 30000
+      connect-timeout: 5000
+      retry-attempts: 3
+      retry-interval: 1000
+      ping-interval: 60000
+      keep-alive: true
 
 mybatis:
   mapper-locations: classpath:/mybatis/mapper/*.xml
