@@ -17,7 +17,6 @@ import com.tinuvile.infrastructure.dao.po.Sku;
 import com.tinuvile.infrastructure.dcc.DCCService;
 import com.tinuvile.infrastructure.redis.IRedisService;
 import org.redisson.api.RBitSet;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
@@ -44,8 +43,9 @@ public class ActivityRepository implements IActivityRepository {
 
     @Resource
     private IRedisService redisService;
-    @Autowired
-    private DCCService dCCService;
+
+    @Resource
+    private DCCService dccService;
 
     /**
      * 根据团购活动ID查询团购活动折扣信息
@@ -140,11 +140,11 @@ public class ActivityRepository implements IActivityRepository {
 
     @Override
     public boolean downgradeSwitch() {
-        return dCCService.isDowngradeSwitch();
+        return dccService.isDowngradeSwitch();
     }
 
     @Override
     public boolean cutRange(String userId) {
-        return dCCService.isCutRange(userId);
+        return dccService.isCutRange(userId);
     }
 }
