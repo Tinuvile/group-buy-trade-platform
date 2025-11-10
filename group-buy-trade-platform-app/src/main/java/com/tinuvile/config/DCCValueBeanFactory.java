@@ -40,6 +40,8 @@ public class DCCValueBeanFactory implements BeanPostProcessor {
     @Bean("dccTopic")
     public RTopic dccRedisTopicListener(RedissonClient redissonClient) {
         RTopic topic = redissonClient.getTopic("group_buy_trade_platform_dcc");
+
+        // 监听配置变更消息
         topic.addListener(String.class, (charSequence, s) -> {
             String[] split = s.split(Constants.SPLIT);
 
@@ -47,11 +49,13 @@ public class DCCValueBeanFactory implements BeanPostProcessor {
             String key = BASE_CONFIG_PATH + attribute;
             String value = split[1];
 
+            // 更新Redis中的值
             RBucket<String> bucket = redissonClient.getBucket(key);
             boolean exists = bucket.isExists();
             if (!exists) return;
             bucket.set(value);
 
+            // 动态更新内存中的对象
             Object objBean = dccObjGroup.get(key);
             if (null == objBean) return;
 
@@ -76,6 +80,8 @@ public class DCCValueBeanFactory implements BeanPostProcessor {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        
+        // 处理AOP代理
         Class<?> targetBeanClass = bean.getClass();
         Object targetBeanObject = bean;
         if (AopUtils.isAopProxy(bean)) {
@@ -83,21 +89,23 @@ public class DCCValueBeanFactory implements BeanPostProcessor {
             targetBeanObject = AopProxyUtils.getSingletonTarget(bean);
         }
 
+        // 遍历所有字段
         Field[] fields = targetBeanClass.getDeclaredFields();
         for (Field field : fields) {
             if (!field.isAnnotationPresent(DCCValue.class)) {
+                // 跳过没有 @DCCValue 注解的字段
                 continue;
             }
 
+            // 处理 @DCCValue 注解的字段
             DCCValue dccValue = field.getAnnotation(DCCValue.class);
-
             String value = dccValue.value();
             if (StringUtils.isBlank(value)) {
                 throw new RuntimeException(field.getName() + "@DCCValue is not config value config case 「isSwitch/isSwitch:1」");
             }
 
             String[] split = value.split(":");
-            String key = BASE_CONFIG_PATH.concat(split[0]);
+            String key = BASE_CONFIG_PATH.concat(split[0]); // 构建Redis键名
             String defaultValue = split.length == 2 ? split[1] : null;
 
             String setValue = defaultValue;
@@ -107,6 +115,7 @@ public class DCCValueBeanFactory implements BeanPostProcessor {
                     throw new RuntimeException("dcc config error " + key + " is not null - 请配置默认值！");
                 }
 
+                // 从Redis获取或设置配置值
                 RBucket<String> bucket = redissonClient.getBucket(key);
                 boolean exists = bucket.isExists();
                 if (!exists) {
@@ -115,13 +124,14 @@ public class DCCValueBeanFactory implements BeanPostProcessor {
                     setValue = bucket.get();
                 }
 
+                // 通过反射设置字段值
                 field.setAccessible(true);
                 field.set(targetBeanObject, setValue);
                 field.setAccessible(false);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-            dccObjGroup.put(key, targetBeanObject);
+            dccObjGroup.put(key, targetBeanObject); // 记录对象引用，用于动态更新
         }
         return targetBeanObject;
     }
