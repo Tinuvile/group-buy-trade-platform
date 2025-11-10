@@ -31,19 +31,14 @@ public class SwitchNode extends AbstractGroupBuyMarketSupport<MarketProductEntit
 
         String userId = requestParameter.getUserId();
 
-        if (repository.whiteListSwitch(userId)) {
-            log.info("白名单用户 {} 放行", userId);
-        } else {
-            log.info("非白名单用户 {} ，检查是否降级和切量", userId);
-            if (repository.downgradeSwitch()) {
-                log.info("拼团活动降级拦截 {}", userId);
-                throw new AppException(ResponseCode.E0003.getCode(), ResponseCode.E0003.getInfo());
-            }
+        if (repository.downgradeSwitch()) {
+            log.info("拼团活动降级拦截 {}", userId);
+            throw new AppException(ResponseCode.E0003.getCode(), ResponseCode.E0003.getInfo());
+        }
 
-            if (!repository.cutRange(userId)) {
-                log.info("拼团活动切量拦截 {}", userId);
-                throw new AppException(ResponseCode.E0004.getCode(), ResponseCode.E0004.getInfo());
-            }
+        if (!repository.cutRange(userId)) {
+            log.info("拼团活动切量拦截 {}", userId);
+            throw new AppException(ResponseCode.E0004.getCode(), ResponseCode.E0004.getInfo());
         }
 
         return router(requestParameter, dynamicContext);

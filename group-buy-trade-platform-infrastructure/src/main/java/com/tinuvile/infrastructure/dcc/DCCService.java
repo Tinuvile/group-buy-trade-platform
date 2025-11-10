@@ -24,12 +24,6 @@ public class DCCService {
     @DCCValue("cutRange:100")
     private String cutRange;
 
-    /**
-     * 白名单开关 0关闭 1开启
-     */
-    @DCCValue("whiteListSwitch:0")
-    private String whiteListSwitch;
-
     public boolean isDowngradeSwitch() {
         return "1".equals(downgradeSwitch);
     }
@@ -44,10 +38,6 @@ public class DCCService {
         }
 
         return false;
-    }
-
-    public boolean isWhiteListSwitch(String userId) {
-        return "1".equals(whiteListSwitch);
     }
 
 }
