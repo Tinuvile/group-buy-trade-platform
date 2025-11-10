@@ -2,6 +2,7 @@ package com.tinuvile.infrastructure.dcc;
 
 
 import com.tinuvile.types.annotations.DCCValue;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 /**
@@ -24,6 +25,18 @@ public class DCCService {
     @DCCValue("cutRange:100")
     private String cutRange;
 
+    /**
+     * 白名单用户列表，逗号分隔
+     */
+    @DCCValue("whiteListUsers:EMPTY")
+    private String whiteListUsers;
+
+     /**
+      * 白名单开关 0关闭 1开启
+      */
+     @DCCValue("whiteListSwitch:0")
+    private String whiteListSwitch;
+
     public boolean isDowngradeSwitch() {
         return "1".equals(downgradeSwitch);
     }
@@ -35,6 +48,29 @@ public class DCCService {
 
         if (lastTwoDigits <= Integer.parseInt(cutRange)) {
             return true;
+        }
+
+        return false;
+    }
+
+    public boolean isWhiteListSwitch() {
+        return "1".equals(whiteListSwitch);
+    }
+
+    public boolean isInWhiteList(String userId) {
+        if (!isWhiteListSwitch()) {
+            return false;
+        }
+
+        if (StringUtils.isBlank(whiteListUsers) || "EMPTY".equals(whiteListUsers.trim())) {
+            return false;
+        }
+
+        String[] userArray = whiteListUsers.split(",");
+        for (String user : userArray) {
+            if (user.trim().equals(userId)) {
+                return true;
+            }
         }
 
         return false;
