@@ -6,6 +6,7 @@ import com.tinuvile.api.IDCCService;
 import com.tinuvile.domain.activity.model.entity.MarketProductEntity;
 import com.tinuvile.domain.activity.model.entity.TrialBalanceEntity;
 import com.tinuvile.domain.activity.service.IIndexGroupBuyMarketService;
+import com.tinuvile.types.enums.ResponseCode;
 import com.tinuvile.types.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
@@ -40,7 +41,9 @@ public class DCCControllerTest {
 
     @Test
     public void test_updateConfig2indexMarketTrial() throws Exception {
-        // 动态调整配置 - 开启降级开关
+
+        // 动态调整配置 - 开启降级开关、关闭白名单
+        dccService.updateConfig("whiteListSwitch", "0");
         dccService.updateConfig("downgradeSwitch", "1");
         // 超时等待异步配置生效
         Thread.sleep(1000);
@@ -71,7 +74,8 @@ public class DCCControllerTest {
 
     @Test
     public void test_updateConfig2indexMarketTrial_Success() throws Exception {
-        // 动态调整配置 - 关闭降级开关，同时确保切量范围包含所有用户
+        // 动态调整配置 - 关闭降级开关和白名单，同时确保切量范围包含所有用户
+        dccService.updateConfig("whiteListSwitch", "0");
         dccService.updateConfig("downgradeSwitch", "0");
         dccService.updateConfig("cutRange", "100");  // 设置切量范围为100，允许所有用户通过
         // 超时等待异步配置生效
@@ -103,7 +107,8 @@ public class DCCControllerTest {
 
     @Test
     public void test_updateConfig2indexMarketTrial_CutRange() throws Exception {
-        // 动态调整配置 - 关闭降级开关，但设置切量范围为0，拦截所有用户
+        // 动态调整配置 - 关闭降级开关和白名单，但设置切量范围为0，拦截所有用户
+        dccService.updateConfig("whiteListSwitch", "0");
         dccService.updateConfig("downgradeSwitch", "0");
         dccService.updateConfig("cutRange", "0");  // 设置切量范围为0，拦截所有用户
         // 超时等待异步配置生效
@@ -130,6 +135,60 @@ public class DCCControllerTest {
             Assert.assertEquals("拼团活动切量拦截", e.getInfo());
             
             log.info("✅ 动态配置中心测试成功：切量开关正常工作，成功拦截请求");
+        }
+    }
+
+    @Test
+    public void test_whitelistUsers_bypass_degradeAndCut() throws Exception {
+        // 全部拦截
+        dccService.updateConfig("downgradeSwitch", "1");
+        dccService.updateConfig("cutRange", "0");
+
+        dccService.updateConfig("whiteListSwitch", "1");
+        dccService.updateConfig("whiteListUsers", "Tinuvile,Erchamion,xiaofuge");
+
+        Thread.sleep(1000);
+
+        // 白名单用户正常通过
+        MarketProductEntity marketProductEntity = new MarketProductEntity();
+        marketProductEntity.setUserId("Tinuvile");
+        marketProductEntity.setSource("s01");
+        marketProductEntity.setChannel("c01");
+        marketProductEntity.setGoodsId("9890001");
+
+        try {
+            TrialBalanceEntity result = indexGroupBuyMarketService.indexMarketTrial(marketProductEntity);
+            log.info("✅ 动态配置中心测试成功：白名单用户正常通过");
+            Assert.assertNotNull("白名单用户正常通过，返回结果不应为空", result);
+        } catch (AppException e) {
+            Assert.fail("白名单用户不应该被拦截: " + e.getInfo());
+        }
+    }
+
+    @Test
+    public void test_normalUser_intercepted_when_whitelist_enable() throws Exception {
+        // 开启降级开关
+        dccService.updateConfig("downgradeSwitch", "1");
+
+        dccService.updateConfig("whiteListSwitch", "1");
+        dccService.updateConfig("whiteListUsers", "Erchamion,xiaofuge");
+
+        Thread.sleep(1000);
+
+        // 非白名单用户测试
+        MarketProductEntity marketProductEntity = new MarketProductEntity();
+        marketProductEntity.setUserId("Tinuvile");
+        marketProductEntity.setSource("s01");
+        marketProductEntity.setChannel("c01");
+        marketProductEntity.setGoodsId("9890001");
+
+        try {
+            indexGroupBuyMarketService.indexMarketTrial(marketProductEntity);
+            Assert.fail("非白名单用户应该被拦截");
+        } catch (AppException e) {
+            Assert.assertEquals("E0003", e.getCode());
+            Assert.assertEquals("拼团活动降级拦截", e.getInfo());
+            log.info("✅ 非白名单用户被正常拦截");
         }
     }
 
