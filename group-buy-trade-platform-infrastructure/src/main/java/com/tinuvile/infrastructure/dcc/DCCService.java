@@ -13,28 +13,20 @@ import org.springframework.stereotype.Service;
 @Service
 public class DCCService {
 
-    /**
-     * 降级开关 0关闭 1开启
-     */
+    /* 降级开关 0关闭 1开启 */
     @DCCValue("downgradeSwitch:0")
     private String downgradeSwitch;
     
-    /**
-     * 切流范围 0-100
-     */
+    /* 切流范围 0-100 */
     @DCCValue("cutRange:100")
     private String cutRange;
 
-    /**
-     * 白名单用户列表，逗号分隔
-     */
+    /* 白名单用户列表，逗号分隔 */
     @DCCValue("whiteListUsers:EMPTY")
     private String whiteListUsers;
 
-     /**
-      * 白名单开关 0关闭 1开启
-      */
-     @DCCValue("whiteListSwitch:0")
+    /* 白名单开关 0关闭 1开启 */
+    @DCCValue("whiteListSwitch:0")
     private String whiteListSwitch;
 
     public boolean isDowngradeSwitch() {
@@ -57,6 +49,7 @@ public class DCCService {
         return "1".equals(whiteListSwitch);
     }
 
+    // TODO 后期优化：缓存已经解析的用户集，仅在配置更改时重新解析
     public boolean isInWhiteList(String userId) {
         if (!isWhiteListSwitch()) {
             return false;
@@ -68,7 +61,7 @@ public class DCCService {
 
         String[] userArray = whiteListUsers.split(",");
         for (String user : userArray) {
-            if (user.trim().equals(userId)) {
+            if (user.trim().equals(userId.trim())) {
                 return true;
             }
         }
