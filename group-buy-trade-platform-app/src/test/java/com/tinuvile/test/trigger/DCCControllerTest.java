@@ -157,7 +157,6 @@ public class DCCControllerTest {
         marketProductEntity.setGoodsId("9890001");
 
         try {
-            // 调用业务方法，预期会被切量开关拦截
             TrialBalanceEntity result = indexGroupBuyMarketService.indexMarketTrial(marketProductEntity);
             log.info("✅ 动态配置中心测试成功：白名单用户正常通过");
             Assert.assertNotNull("白名单用户正常通过，返回结果不应为空", result);
