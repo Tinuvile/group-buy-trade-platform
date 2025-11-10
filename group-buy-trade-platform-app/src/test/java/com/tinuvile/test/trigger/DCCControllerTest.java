@@ -41,7 +41,9 @@ public class DCCControllerTest {
 
     @Test
     public void test_updateConfig2indexMarketTrial() throws Exception {
-        // 动态调整配置 - 开启降级开关
+
+        // 动态调整配置 - 开启降级开关、关闭白名单
+        dccService.updateConfig("whiteListSwitch", "0");
         dccService.updateConfig("downgradeSwitch", "1");
         // 超时等待异步配置生效
         Thread.sleep(1000);
@@ -72,7 +74,8 @@ public class DCCControllerTest {
 
     @Test
     public void test_updateConfig2indexMarketTrial_Success() throws Exception {
-        // 动态调整配置 - 关闭降级开关，同时确保切量范围包含所有用户
+        // 动态调整配置 - 关闭降级开关和白名单，同时确保切量范围包含所有用户
+        dccService.updateConfig("whiteListSwitch", "0");
         dccService.updateConfig("downgradeSwitch", "0");
         dccService.updateConfig("cutRange", "100");  // 设置切量范围为100，允许所有用户通过
         // 超时等待异步配置生效
@@ -104,7 +107,8 @@ public class DCCControllerTest {
 
     @Test
     public void test_updateConfig2indexMarketTrial_CutRange() throws Exception {
-        // 动态调整配置 - 关闭降级开关，但设置切量范围为0，拦截所有用户
+        // 动态调整配置 - 关闭降级开关和白名单，但设置切量范围为0，拦截所有用户
+        dccService.updateConfig("whiteListSwitch", "0");
         dccService.updateConfig("downgradeSwitch", "0");
         dccService.updateConfig("cutRange", "0");  // 设置切量范围为0，拦截所有用户
         // 超时等待异步配置生效
