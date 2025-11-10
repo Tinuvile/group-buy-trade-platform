@@ -14,6 +14,7 @@ import com.tinuvile.infrastructure.dao.po.GroupBuyActivity;
 import com.tinuvile.infrastructure.dao.po.GroupBuyDiscount;
 import com.tinuvile.infrastructure.dao.po.SCSkuActivity;
 import com.tinuvile.infrastructure.dao.po.Sku;
+import com.tinuvile.infrastructure.dcc.DCCService;
 import com.tinuvile.infrastructure.redis.IRedisService;
 import org.redisson.api.RBitSet;
 import org.springframework.stereotype.Repository;
@@ -42,6 +43,9 @@ public class ActivityRepository implements IActivityRepository {
 
     @Resource
     private IRedisService redisService;
+
+    @Resource
+    private DCCService dccService;
 
     /**
      * 根据团购活动ID查询团购活动折扣信息
@@ -132,5 +136,15 @@ public class ActivityRepository implements IActivityRepository {
         RBitSet bitSet = redisService.getBitSet(tagId);
         if (!bitSet.isExists()) return true;
         return bitSet.get(redisService.getIndexFromUserId(userId));
+    }
+
+    @Override
+    public boolean downgradeSwitch() {
+        return dccService.isDowngradeSwitch();
+    }
+
+    @Override
+    public boolean cutRange(String userId) {
+        return dccService.isCutRange(userId);
     }
 }
