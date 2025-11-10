@@ -150,7 +150,7 @@ public class ActivityRepository implements IActivityRepository {
 
     @Override
     public boolean whiteListSwitch(String userId) {
-        // TODO 实现用户白名单校验逻辑
+        // TODO 实现用户白名单校验逻辑，可能需要增加字段或库表
         return dccService.isWhiteListSwitch(userId);
     }
 }
