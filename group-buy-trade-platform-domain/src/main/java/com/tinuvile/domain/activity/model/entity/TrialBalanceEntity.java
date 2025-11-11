@@ -1,6 +1,7 @@
 package com.tinuvile.domain.activity.model.entity;
 
 
+import com.tinuvile.domain.activity.model.valobj.GroupBuyActivityDiscountVO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TrialBalanceEntity {
+
     /* 商品ID */
     private String goodsId;
 
@@ -45,4 +47,8 @@ public class TrialBalanceEntity {
 
     /* 是否可参与 */
     private Boolean isEnable;
+
+     /* 活动配置信息 */
+    private GroupBuyActivityDiscountVO groupBuyActivityDiscountVO;
+
 }
