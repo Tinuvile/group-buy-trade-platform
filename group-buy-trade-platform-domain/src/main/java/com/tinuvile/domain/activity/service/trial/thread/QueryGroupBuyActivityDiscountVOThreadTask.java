@@ -14,6 +14,8 @@ import java.util.concurrent.Callable;
  */
 public class QueryGroupBuyActivityDiscountVOThreadTask implements Callable<GroupBuyActivityDiscountVO> {
 
+    private final Long activityId;
+
     private final String source;
 
     private final String channel;
@@ -22,7 +24,8 @@ public class QueryGroupBuyActivityDiscountVOThreadTask implements Callable<Group
 
     private final IActivityRepository repository;
 
-    public QueryGroupBuyActivityDiscountVOThreadTask(String source, String channel, String goodsId, IActivityRepository repository) {
+    public QueryGroupBuyActivityDiscountVOThreadTask(Long activityId, String source, String channel, String goodsId, IActivityRepository repository) {
+        this.activityId = activityId;
         this.source = source;
         this.channel = channel;
         this.goodsId = goodsId;
@@ -31,11 +34,17 @@ public class QueryGroupBuyActivityDiscountVOThreadTask implements Callable<Group
 
     @Override
     public GroupBuyActivityDiscountVO call() throws Exception {
-        SCSkuActivityVO scSkuActivityVO = repository.querySCSkuActivityByGoodsId(source, channel, goodsId);
-        if (null == scSkuActivityVO) {
-            return null;
+        // 判断是否存在可用的活动ID
+        Long availableActivityId = activityId;
+        if (null == activityId) {
+            // 查询渠道商品活动配置关联配置
+            SCSkuActivityVO scSkuActivityVO = repository.querySCSkuActivityByGoodsId(source, channel, goodsId);
+            if (null == scSkuActivityVO) {
+                return null;
+            }
+            availableActivityId = scSkuActivityVO.getActivityId();
         }
 
-        return repository.queryGroupBuyActivityDiscountVO(scSkuActivityVO.getActivityId());
+        return repository.queryGroupBuyActivityDiscountVO(availableActivityId);
     }
 }
