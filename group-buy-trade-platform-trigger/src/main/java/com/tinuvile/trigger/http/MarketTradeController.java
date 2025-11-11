@@ -1,6 +1,5 @@
 package com.tinuvile.trigger.http;
 
-
 import com.alibaba.fastjson.JSON;
 import com.tinuvile.api.IMarketTradeService;
 import com.tinuvile.api.dto.LockMarketPayOrderRequestDTO;
@@ -58,7 +57,7 @@ public class MarketTradeController implements IMarketTradeService {
 
             log.info("营销交易锁单:{} LockMarketPayOrderRequestDTO:{}", userId, JSON.toJSONString(lockMarketPayOrderRequestDTO));
 
-            if (StringUtils.isBlank(userId) || StringUtils.isBlank(source) || StringUtils.isBlank(channel) || StringUtils.isBlank(goodsId) || StringUtils.isBlank(goodsId) || null == activityId) {
+            if (StringUtils.isBlank(userId) || StringUtils.isBlank(source) || StringUtils.isBlank(channel) || StringUtils.isBlank(goodsId) || StringUtils.isBlank(outTradeNo) || null == activityId) {
                 return Response.<LockMarketPayOrderResponseDTO>builder()
                         .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                         .info(ResponseCode.ILLEGAL_PARAMETER.getInfo())

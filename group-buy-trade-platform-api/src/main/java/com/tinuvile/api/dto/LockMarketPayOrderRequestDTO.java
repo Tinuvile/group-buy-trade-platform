@@ -22,10 +22,10 @@ public class LockMarketPayOrderRequestDTO {
     // 商品ID
     private String goodsId;
 
-    // 渠道
+    // 来源
     private String source;
 
-    // 来源
+    // 渠道
     private String channel;
 
     // 外部交易单号

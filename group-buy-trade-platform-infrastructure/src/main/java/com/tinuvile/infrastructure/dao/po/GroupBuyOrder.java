@@ -29,10 +29,10 @@ public class GroupBuyOrder {
     /** 活动ID */
     private Long activityId;
 
-    /** 渠道 */
+    /** 来源 */
     private String source;
 
-    /** 来源 */
+    /** 渠道 */
     private String channel;
 
     /** 原始价格 */

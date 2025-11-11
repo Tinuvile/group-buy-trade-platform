@@ -19,10 +19,10 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class PayDiscountEntity {
 
-    /** 渠道 */
+    /** 来源 */
     private String source;
 
-    /** 来源 */
+    /** 渠道 */
     private String channel;
 
     /** 商品ID */

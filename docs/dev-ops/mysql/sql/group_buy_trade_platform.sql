@@ -216,8 +216,8 @@ CREATE TABLE `group_buy_order`
     `id`              int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
     `team_id`         varchar(8)       NOT NULL COMMENT '拼单组队ID',
     `activity_id`     bigint(8)        NOT NULL COMMENT '活动ID',
-    `source`          varchar(8)       NOT NULL COMMENT '渠道',
-    `channel`         varchar(8)       NOT NULL COMMENT '来源',
+    `source`          varchar(8)       NOT NULL COMMENT '来源',
+    `channel`         varchar(8)       NOT NULL COMMENT '渠道',
     `original_price`  decimal(8, 2)    NOT NULL COMMENT '原始价格',
     `deduction_price` decimal(8, 2)    NOT NULL COMMENT '折扣金额',
     `pay_price`       decimal(8, 2)    NOT NULL COMMENT '支付价格',
@@ -272,8 +272,8 @@ CREATE TABLE `group_buy_order_list`
     `start_time`      datetime         NOT NULL COMMENT '活动开始时间',
     `end_time`        datetime         NOT NULL COMMENT '活动结束时间',
     `goods_id`        varchar(16)      NOT NULL COMMENT '商品ID',
-    `source`          varchar(8)       NOT NULL COMMENT '渠道',
-    `channel`         varchar(8)       NOT NULL COMMENT '来源',
+    `source`          varchar(8)       NOT NULL COMMENT '来源',
+    `channel`         varchar(8)       NOT NULL COMMENT '渠道',
     `original_price`  decimal(8, 2)    NOT NULL COMMENT '原始价格',
     `deduction_price` decimal(8, 2)    NOT NULL COMMENT '折扣金额',
     `status`          tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态；0初始锁定、1消费完成',
@@ -281,7 +281,8 @@ CREATE TABLE `group_buy_order_list`
     `create_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_order_id` (`order_id`)
+    UNIQUE KEY `uq_order_id` (`order_id`),
+    UNIQUE KEY `uq_out_trade_no_user_id` (`out_trade_no`, `user_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
