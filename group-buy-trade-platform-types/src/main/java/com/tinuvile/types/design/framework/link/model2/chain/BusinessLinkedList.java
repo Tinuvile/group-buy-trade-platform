@@ -16,6 +16,10 @@ public class BusinessLinkedList<T, D, R> extends LinkedList<ILogicHandler<T, D, 
 
     @Override
     public R apply(T requestParameter, D dynamicParameter) throws Exception {
+        if (this.first == null) {
+            return null;
+        }
+
         Node<ILogicHandler<T, D, R>> current = this.first;
         do {
             ILogicHandler<T, D, R> item = current.item;

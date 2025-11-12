@@ -22,6 +22,10 @@ public abstract class AbstractLogicLink<T, D, R> implements ILogicLink<T, D, R> 
     }
 
     protected R next(T requestParameter, D dynamicParameter) throws Exception {
+        if (next == null) {
+            return null;
+        }
+
         return next.apply(requestParameter, dynamicParameter);
     }
 
