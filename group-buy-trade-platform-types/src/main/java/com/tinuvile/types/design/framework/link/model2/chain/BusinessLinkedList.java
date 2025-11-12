@@ -1,0 +1,36 @@
+package com.tinuvile.types.design.framework.link.model2.chain;
+
+
+import com.tinuvile.types.design.framework.link.model2.handler.ILogicHandler;
+
+/**
+ * @author Tinuvile
+ * @description 受理业务流程
+ * @since 2025/11/11
+ */
+public class BusinessLinkedList<T, D, R> extends LinkedList<ILogicHandler<T, D, R>> implements ILogicHandler<T, D, R> {
+
+    public BusinessLinkedList(String name) {
+        super(name);
+    }
+
+    @Override
+    public R apply(T requestParameter, D dynamicParameter) throws Exception {
+        if (this.first == null) {
+            return null;
+        }
+
+        Node<ILogicHandler<T, D, R>> current = this.first;
+        do {
+            ILogicHandler<T, D, R> item = current.item;
+            R apply = item.apply(requestParameter, dynamicParameter);
+            if (apply != null) {
+                return apply;
+            }
+
+            current = current.next;
+        } while (current != null);
+
+        return null;
+    }
+}
