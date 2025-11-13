@@ -177,7 +177,7 @@ CREATE TABLE `group_buy_discount`
     `discount_name` varchar(64)         NOT NULL COMMENT '折扣标题',
     `discount_desc` varchar(256)        NOT NULL COMMENT '折扣描述',
     `discount_type` tinyint(1)          NOT NULL DEFAULT '0' COMMENT '折扣类型（0:base、1:tag）',
-    `market_plan`   varchar(4)          NOT NULL DEFAULT 'ZJ' COMMENT '营销优惠计划（ZJ:直减、MJ:满减、ZK:折扣、N元购）',
+    `market_plan`   varchar(4)          NOT NULL DEFAULT 'ZJ' COMMENT '营销优惠计划（ZJ:直减、MJ:满减、ZK:折扣、N:N元购）',
     `market_expr`   varchar(32)         NOT NULL COMMENT '营销优惠表达式',
     `tag_id`        varchar(32)                  DEFAULT NULL COMMENT '人群标签，特定优惠限定',
     `create_time`   datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -290,6 +290,7 @@ CREATE TABLE `group_buy_order_list`
     `update_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_order_id` (`order_id`),
+    UNIQUE KEY `uq_out_trade_no_user_id` (`out_trade_no`, `user_id`),
     KEY `idx_user_id_activity_id` (`user_id`, `activity_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
