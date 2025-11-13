@@ -41,6 +41,11 @@ public class MarketTradeController implements IMarketTradeService {
     @Resource
     private ITradeOrderService tradeOrderService;
 
+    /**
+     * 拼团交易锁定订单
+     * @param lockMarketPayOrderRequestDTO 锁定订单请求参数
+     * @return 锁定订单响应参数
+     */
     @RequestMapping(value = "lock_market_pay_order", method = RequestMethod.POST)
     @Override
     public Response<LockMarketPayOrderResponseDTO> lockMarketPayOrder(@RequestBody LockMarketPayOrderRequestDTO lockMarketPayOrderRequestDTO) {
@@ -101,9 +106,17 @@ public class MarketTradeController implements IMarketTradeService {
                     .activityId(activityId)
                     .build());
 
+            // 人群限定
+            if (!trialBalanceEntity.getIsVisible() || !trialBalanceEntity.getIsEnable()) {
+                return Response.<LockMarketPayOrderResponseDTO>builder()
+                        .code(ResponseCode.E0007.getCode())
+                        .info(ResponseCode.E0007.getInfo())
+                        .build();
+            }
+
             GroupBuyActivityDiscountVO groupBuyActivityDiscountVO = trialBalanceEntity.getGroupBuyActivityDiscountVO();
 
-            // 锁单
+            // 营销优惠锁单
             marketPayOrderEntity = tradeOrderService.lockMarketPayOrder(
                     UserEntity.builder().userId(userId).build(),
                     PayActivityEntity.builder()
