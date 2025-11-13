@@ -22,13 +22,13 @@ public class ZKCalculateService extends AbstractDiscountCalculateService {
 
         String marketExpr = groupByDiscount.getMarketExpr();
 
-        BigDecimal deductionPrice = originalPrice.multiply(new BigDecimal(marketExpr));
+        BigDecimal payPrice = originalPrice.multiply(new BigDecimal(marketExpr));
 
         // 最低1分钱
-        if (deductionPrice.compareTo(BigDecimal.ZERO) <= 0) {
+        if (payPrice.compareTo(BigDecimal.ZERO) <= 0) {
             return new BigDecimal("0.01");
         }
 
-        return deductionPrice;
+        return payPrice;
     }
 }

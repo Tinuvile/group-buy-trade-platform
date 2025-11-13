@@ -1,18 +1,15 @@
-/*
- Navicat Premium Data Transfer
+# ************************************************************
+# Sequel Ace SQL dump
+# 版本号： 20050
+#
+# https://sequel-ace.com/
+# https://github.com/Sequel-Ace/Sequel-Ace
+#
+# 主机: 127.0.0.1 (MySQL 5.6.39)
+# 数据库: group_buy_market
+# 生成时间: 2025-01-25 07:50:09 +0000
+# ************************************************************
 
- Source Server         : 127.0.0.1
- Source Server Type    : MySQL
- Source Server Version : 50639
- Source Host           : localhost:3306
- Source Schema         : road-map
-
- Target Server Type    : MySQL
- Target Server Version : 50639
- File Encoding         : 65001
-
- Date: 15/07/2023 09:26:39
-*/
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT = @@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS = @@CHARACTER_SET_RESULTS */;
@@ -49,7 +46,8 @@ LOCK TABLES `crowd_tags` WRITE;
     DISABLE KEYS */;
 
 INSERT INTO `crowd_tags` (`id`, `tag_id`, `tag_name`, `tag_desc`, `statistics`, `create_time`, `update_time`)
-VALUES (1, 'RQ_KJHKL98UU78H66554GFDV', '潜在消费用户', '潜在消费用户', 6, '2024-12-28 12:53:28', '2024-12-28 16:58:45');
+VALUES (1, 'RQ_KJHKL98UU78H66554GFDV', '潜在消费用户', '潜在消费用户', 11, '2024-12-28 12:53:28',
+        '2025-01-25 15:44:55');
 
 /*!40000 ALTER TABLE `crowd_tags`
     ENABLE KEYS */;
@@ -79,7 +77,10 @@ LOCK TABLES `crowd_tags_detail` WRITE;
 
 INSERT INTO `crowd_tags_detail` (`id`, `tag_id`, `user_id`, `create_time`, `update_time`)
 VALUES (4, 'RQ_KJHKL98UU78H66554GFDV', 'xiaofuge', '2024-12-28 14:42:30', '2024-12-28 14:42:30'),
-       (5, 'RQ_KJHKL98UU78H66554GFDV', 'liergou', '2024-12-28 14:42:30', '2024-12-28 14:42:30');
+       (5, 'RQ_KJHKL98UU78H66554GFDV', 'liergou', '2024-12-28 14:42:30', '2024-12-28 14:42:30'),
+       (9, 'RQ_KJHKL98UU78H66554GFDV', 'Tinuvile', '2025-01-25 15:44:55', '2025-01-25 15:44:55'),
+       (10, 'RQ_KJHKL98UU78H66554GFDV', 'Erchamion', '2025-01-25 15:44:55', '2025-01-25 15:44:55'),
+       (11, 'RQ_KJHKL98UU78H66554GFDV', 'xfg01', '2025-01-25 15:44:55', '2025-01-25 15:44:55');
 
 /*!40000 ALTER TABLE `crowd_tags_detail`
     ENABLE KEYS */;
@@ -121,6 +122,7 @@ VALUES (1, 'RQ_KJHKL98UU78H66554GFDV', '10001', 0, '100', '2024-12-28 12:55:05',
     ENABLE KEYS */;
 UNLOCK TABLES;
 
+
 # 转储表 group_buy_activity
 # ------------------------------------------------------------
 
@@ -155,9 +157,8 @@ LOCK TABLES `group_buy_activity` WRITE;
 INSERT INTO `group_buy_activity` (`id`, `activity_id`, `activity_name`, `discount_id`, `group_type`, `take_limit_count`,
                                   `target`, `valid_time`, `status`, `start_time`, `end_time`, `tag_id`, `tag_scope`,
                                   `create_time`, `update_time`)
-VALUES (1, 100123, '测试活动', '25120208', 0, 1, 1, 15, 1, '2024-12-07 10:19:40', '2024-12-07 10:19:40',
-        'RQ_KJHKL98UU78H66554GFDV', '1,2',
-        '2024-12-07 10:19:40', '2025-01-01 18:27:47');
+VALUES (1, 100123, '测试活动', '25120208', 0, 1, 3, 15, 1, '2024-12-07 10:19:40', '2025-12-07 10:19:40',
+        'RQ_KJHKL98UU78H66554GFDV', '1,2', '2024-12-07 10:19:40', '2025-01-25 15:27:18');
 
 /*!40000 ALTER TABLE `group_buy_activity`
     ENABLE KEYS */;
@@ -176,9 +177,9 @@ CREATE TABLE `group_buy_discount`
     `discount_name` varchar(64)         NOT NULL COMMENT '折扣标题',
     `discount_desc` varchar(256)        NOT NULL COMMENT '折扣描述',
     `discount_type` tinyint(1)          NOT NULL DEFAULT '0' COMMENT '折扣类型（0:base、1:tag）',
-    `market_plan`   varchar(4)          NOT NULL DEFAULT 'ZJ' COMMENT '营销优惠计划（ZJ:直减、MJ:满减、N元购）',
+    `market_plan`   varchar(4)          NOT NULL DEFAULT 'ZJ' COMMENT '营销优惠计划（ZJ:直减、MJ:满减、ZK:折扣、N元购）',
     `market_expr`   varchar(32)         NOT NULL COMMENT '营销优惠表达式',
-    `tag_id`        varchar(8)                   DEFAULT NULL COMMENT '人群标签，特定优惠限定',
+    `tag_id`        varchar(32)                  DEFAULT NULL COMMENT '人群标签，特定优惠限定',
     `create_time`   datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`   datetime            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
@@ -250,7 +251,13 @@ VALUES (7, '64675056', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 3, 0, 0, '2
        (11, 'tQvVMQWS', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 0, 1, 0, '2025-01-11 19:16:30',
         '2025-01-11 19:16:30'),
        (12, '64451200', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 0, 2, 0, '2025-01-11 19:18:01',
-        '2025-01-11 19:18:38');
+        '2025-01-11 19:18:38'),
+       (14, '31288634', 100123, 's01', 'c01', 100.00, 10.00, 90.00, 3, 0, 1, 0, '2025-01-25 15:31:09',
+        '2025-01-25 15:31:09'),
+       (15, '51764601', 100123, 's01', 'c01', 100.00, 10.00, 90.00, 3, 0, 1, 0, '2025-01-25 15:35:12',
+        '2025-01-25 15:35:12'),
+       (16, '44846821', 100123, 's01', 'c01', 100.00, 10.00, 90.00, 3, 0, 1, 0, '2025-01-25 15:43:07',
+        '2025-01-25 15:43:07');
 
 /*!40000 ALTER TABLE `group_buy_order`
     ENABLE KEYS */;
@@ -278,11 +285,12 @@ CREATE TABLE `group_buy_order_list`
     `deduction_price` decimal(8, 2)    NOT NULL COMMENT '折扣金额',
     `status`          tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态；0初始锁定、1消费完成',
     `out_trade_no`    varchar(12)      NOT NULL COMMENT '外部交易单号-确保外部调用唯一幂等',
+    `biz_id`          varchar(64)      NOT NULL COMMENT '业务唯一ID',
     `create_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_order_id` (`order_id`),
-    UNIQUE KEY `uq_out_trade_no_user_id` (`out_trade_no`, `user_id`)
+    KEY `idx_user_id_activity_id` (`user_id`, `activity_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
 
@@ -292,33 +300,13 @@ LOCK TABLES `group_buy_order_list` WRITE;
 
 INSERT INTO `group_buy_order_list` (`id`, `user_id`, `team_id`, `order_id`, `activity_id`, `start_time`, `end_time`,
                                     `goods_id`, `source`, `channel`, `original_price`, `deduction_price`, `status`,
-                                    `out_trade_no`, `create_time`, `update_time`)
-VALUES (9, 'xiaofuge', '64675056', '394859646148', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '314870877261', '2025-01-11 15:13:08', '2025-01-11 15:13:08'),
-       (10, 'xiaofuge', '64675056', '141036625362', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '485524644458', '2025-01-11 15:13:35', '2025-01-11 15:13:35'),
-       (11, 'xiaofuge', '64675056', '686664095344', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '942065764153', '2025-01-11 15:13:47', '2025-01-11 15:13:47'),
-       (12, 'xiaofuge', '31724477', '755647827138', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '782446346690', '2025-01-11 16:02:23', '2025-01-11 16:02:23'),
-       (13, 'xiaofuge', '31724477', '356055747145', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '648016222817', '2025-01-11 16:06:27', '2025-01-11 16:06:27'),
-       (14, 'xiaofuge', '31724477', '831212748893', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '494004780611', '2025-01-11 16:06:49', '2025-01-11 16:06:49'),
-       (15, 'xiaofuge', '33063446', '391398265383', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '285608029258', '2025-01-11 18:32:18', '2025-01-11 18:32:18'),
-       (16, 'xiaofuge', '33063446', '479801370153', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '561239558595', '2025-01-11 18:33:13', '2025-01-11 18:33:13'),
-       (17, 'xiaofuge', '33063446', '371204389323', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '987071087883', '2025-01-11 18:33:35', '2025-01-11 18:33:35'),
-       (18, 'xiaofuge', 'RNPZQnlL', '934890879756', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '628931704712', '2025-01-11 19:15:54', '2025-01-11 19:15:54'),
-       (19, 'xiaofuge', 'tQvVMQWS', '321326266333', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '445825049409', '2025-01-11 19:16:30', '2025-01-11 19:16:30'),
-       (20, 'xiaofuge', '64451200', '028993411110', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '911193728147', '2025-01-11 19:18:01', '2025-01-11 19:18:01'),
-       (21, 'xiaofuge', '64451200', '950295523573', 100123, '2024-12-07 10:19:40', '2024-12-07 10:19:40', '9890001',
-        's01', 'c01', 90.00, 90.00, 0, '054537636261', '2025-01-11 19:18:38', '2025-01-11 19:18:38');
+                                    `out_trade_no`, `biz_id`, `create_time`, `update_time`)
+VALUES (23, 'liergou', '51764601', '585183514461', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001',
+        's01', 'c01', 100.00, 10.00, 0, '843867108777', '100123_liergou_1', '2025-01-25 15:35:12',
+        '2025-01-25 15:35:12'),
+       (24, 'xiaofuge', '44846821', '059969746419', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001',
+        's01', 'c01', 100.00, 10.00, 0, '411481433880', '100123_xiaofuge_1', '2025-01-25 15:43:07',
+        '2025-01-25 15:43:07');
 
 /*!40000 ALTER TABLE `group_buy_order_list`
     ENABLE KEYS */;

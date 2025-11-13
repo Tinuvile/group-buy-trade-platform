@@ -32,12 +32,12 @@ public class MJCalculateService extends AbstractDiscountCalculateService {
             return originalPrice;
         }
 
-        BigDecimal deductionPrice = originalPrice.subtract(y);
+        BigDecimal payPrice = originalPrice.subtract(y);
 
-        if (deductionPrice.compareTo(BigDecimal.ZERO) < 0) {
+        if (payPrice.compareTo(BigDecimal.ZERO) < 0) {
             return BigDecimal.ZERO;
         }
 
-        return deductionPrice;
+        return payPrice;
     }
 }

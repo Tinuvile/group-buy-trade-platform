@@ -19,9 +19,7 @@ import com.tinuvile.types.enums.ResponseCode;
 import com.tinuvile.types.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.Objects;
@@ -43,8 +41,9 @@ public class MarketTradeController implements IMarketTradeService {
     @Resource
     private ITradeOrderService tradeOrderService;
 
+    @RequestMapping(value = "lock_market_pay_order", method = RequestMethod.POST)
     @Override
-    public Response<LockMarketPayOrderResponseDTO> lockMarketPayOrder(LockMarketPayOrderRequestDTO lockMarketPayOrderRequestDTO) {
+    public Response<LockMarketPayOrderResponseDTO> lockMarketPayOrder(@RequestBody LockMarketPayOrderRequestDTO lockMarketPayOrderRequestDTO) {
         try {
             // 参数
             String userId = lockMarketPayOrderRequestDTO.getUserId();
@@ -81,7 +80,7 @@ public class MarketTradeController implements IMarketTradeService {
                         .build();
             }
 
-            // 判断拼团锁单是否完成了目标
+            // 判断拼团锁单是否实现了目标
             if (null != teamId) {
                 GroupBuyProcessVO groupBuyProcessVO = tradeOrderService.queryGroupBuyProcess(teamId);
                 if (null != groupBuyProcessVO && Objects.equals(groupBuyProcessVO.getTargetCount(), groupBuyProcessVO.getLockCount())) {
@@ -122,6 +121,7 @@ public class MarketTradeController implements IMarketTradeService {
                             .goodsName(trialBalanceEntity.getGoodsName())
                             .originalPrice(trialBalanceEntity.getOriginalPrice())
                             .deductionPrice(trialBalanceEntity.getDeductionPrice())
+                            .payPrice(trialBalanceEntity.getPayPrice())
                             .outTradeNo(outTradeNo)
                             .build());
 
