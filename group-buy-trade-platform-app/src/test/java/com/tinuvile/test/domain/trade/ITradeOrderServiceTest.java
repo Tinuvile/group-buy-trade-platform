@@ -39,11 +39,11 @@ public class ITradeOrderServiceTest {
     public void test_lockMarketPayOrder() throws Exception {
         // 入参信息
         Long activityId = 100123L;
-        String userId = "Tinuvile";
+        String userId = "TestUser001";
         String goodsId = "9890001";
         String source = "s01";
         String channel = "c01";
-        String outTradeNo = "909000098111";
+        String outTradeNo = "TO" + (System.currentTimeMillis() % 10000000000L);
 
         // 1. 获取试算优惠，有【activityId】优先使用
         TrialBalanceEntity trialBalanceEntity = indexGroupBuyMarketService.indexMarketTrial(MarketProductEntity.builder()
@@ -81,6 +81,7 @@ public class ITradeOrderServiceTest {
                         .goodsName(trialBalanceEntity.getGoodsName())
                         .originalPrice(trialBalanceEntity.getOriginalPrice())
                         .deductionPrice(trialBalanceEntity.getDeductionPrice())
+                        .payPrice(trialBalanceEntity.getPayPrice())
                         .outTradeNo(outTradeNo)
                         .build());
 

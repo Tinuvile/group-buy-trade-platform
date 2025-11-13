@@ -35,6 +35,7 @@ public class TagService implements ITagService {
             {
                 add("Tinuvile");
                 add("Erchamion");
+                add("TestUser001");
                 add("tin01");
             }
         };
