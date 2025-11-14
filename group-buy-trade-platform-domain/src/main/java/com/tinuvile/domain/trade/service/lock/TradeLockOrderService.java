@@ -1,11 +1,12 @@
-package com.tinuvile.domain.trade.service;
+package com.tinuvile.domain.trade.service.lock;
 
 
 import com.tinuvile.domain.trade.adapter.repository.ITradeRepository;
 import com.tinuvile.domain.trade.model.aggregate.GroupBuyOrderAggregate;
 import com.tinuvile.domain.trade.model.entity.*;
 import com.tinuvile.domain.trade.model.valobj.GroupBuyProcessVO;
-import com.tinuvile.domain.trade.service.factory.TradeRuleFilterFactory;
+import com.tinuvile.domain.trade.service.ITradeLockOrderService;
+import com.tinuvile.domain.trade.service.lock.factory.TradeRuleFilterFactory;
 import com.tinuvile.types.design.framework.link.model2.chain.BusinessLinkedList;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,7 @@ import javax.annotation.Resource;
  */
 @Slf4j
 @Service
-public class TradeOrderService implements ITradeOrderService {
+public class TradeLockOrderService implements ITradeLockOrderService {
 
     @Resource
     private ITradeRepository repository;
