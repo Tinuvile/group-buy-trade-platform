@@ -95,6 +95,7 @@ public class ITradeLockOrderServiceTest {
                         .activityName(groupBuyActivityDiscountVO.getActivityName())
                         .startTime(groupBuyActivityDiscountVO.getStartTime())
                         .endTime(groupBuyActivityDiscountVO.getEndTime())
+                        .validTime(groupBuyActivityDiscountVO.getValidTime())
                         .targetCount(groupBuyActivityDiscountVO.getTarget())
                         .build(),
                 PayDiscountEntity.builder()
