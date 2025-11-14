@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * @author Tinuvile
- * @description 用户实体对象
+ * @description
  * @since 2025/11/11
  */
 @Data

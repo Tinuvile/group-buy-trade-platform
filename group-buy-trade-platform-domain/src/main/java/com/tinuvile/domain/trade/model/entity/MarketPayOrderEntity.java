@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 
 /**
  * @author Tinuvile
- * @description 拼团、预购订单营销实体对象
+ * @description
  * @since 2025/11/11
  */
 @Data
@@ -19,9 +19,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MarketPayOrderEntity {
-
-    /** 拼团组队ID */
-    private String teamId;
 
     /** 预购订单ID */
     private String orderId;
