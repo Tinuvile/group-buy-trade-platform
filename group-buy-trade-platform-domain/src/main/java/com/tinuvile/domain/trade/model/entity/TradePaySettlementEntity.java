@@ -6,18 +6,25 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Date;
-
 /**
  * @author Tinuvile
- * @description 支付活动实体对象
- * @since 2025/11/11
+ * @description 交易结算订单实体对象
+ * @since 2025/11/14
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PayActivityEntity {
+public class TradePaySettlementEntity {
+
+    /** 渠道 */
+    private String source;
+
+    /** 来源 */
+    private String channel;
+
+    /** 用户ID */
+    private String userId;
 
     /** 拼单组队ID */
     private String teamId;
@@ -25,16 +32,7 @@ public class PayActivityEntity {
     /** 活动ID */
     private Long activityId;
 
-    /** 活动名称 */
-    private String activityName;
-
-    /** 拼团开始时间 */
-    private Date startTime;
-
-    /** 拼团结束时间 */
-    private Date endTime;
-
-    /** 目标数量 */
-    private Integer targetCount;
+    /** 外部交易单号 */
+    private String outTradeNo;
 
 }

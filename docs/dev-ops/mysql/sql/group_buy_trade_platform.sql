@@ -47,7 +47,7 @@ LOCK TABLES `crowd_tags` WRITE;
 
 INSERT INTO `crowd_tags` (`id`, `tag_id`, `tag_name`, `tag_desc`, `statistics`, `create_time`, `update_time`)
 VALUES (1, 'RQ_KJHKL98UU78H66554GFDV', '潜在消费用户', '潜在消费用户', 11, '2024-12-28 12:53:28',
-        '2025-01-25 15:44:55');
+        '2025-11-25 15:44:55');
 
 /*!40000 ALTER TABLE `crowd_tags`
     ENABLE KEYS */;
@@ -80,7 +80,9 @@ VALUES (4, 'RQ_KJHKL98UU78H66554GFDV', 'xiaofuge', '2024-12-28 14:42:30', '2024-
        (5, 'RQ_KJHKL98UU78H66554GFDV', 'liergou', '2024-12-28 14:42:30', '2024-12-28 14:42:30'),
        (9, 'RQ_KJHKL98UU78H66554GFDV', 'Tinuvile', '2025-01-25 15:44:55', '2025-01-25 15:44:55'),
        (10, 'RQ_KJHKL98UU78H66554GFDV', 'Erchamion', '2025-01-25 15:44:55', '2025-01-25 15:44:55'),
-       (11, 'RQ_KJHKL98UU78H66554GFDV', 'tin01', '2025-01-25 15:44:55', '2025-01-25 15:44:55');
+       (11, 'RQ_KJHKL98UU78H66554GFDV', 'tin01', '2025-01-25 15:44:55', '2025-01-25 15:44:55'),
+       (12, 'RQ_KJHKL98UU78H66554GFDV', 'tin02', '2025-11-13 15:44:55', '2025-11-13 15:44:55'),
+       (13, 'RQ_KJHKL98UU78H66554GFDV', 'tin03', '2025-11-13 15:44:55', '2025-11-13 15:44:55');
 
 /*!40000 ALTER TABLE `crowd_tags_detail`
     ENABLE KEYS */;
@@ -283,7 +285,7 @@ CREATE TABLE `group_buy_order_list`
     `channel`         varchar(8)       NOT NULL COMMENT '渠道',
     `original_price`  decimal(8, 2)    NOT NULL COMMENT '原始价格',
     `deduction_price` decimal(8, 2)    NOT NULL COMMENT '折扣金额',
-    `status`          tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态；0初始锁定、1消费完成',
+    `status`          tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态；0初始锁定、1消费完成、2用户退单',
     `out_trade_no`    varchar(12)      NOT NULL COMMENT '外部交易单号-确保外部调用唯一幂等',
     `biz_id`          varchar(64)      NOT NULL COMMENT '业务唯一ID',
     `create_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -307,9 +309,51 @@ VALUES (23, 'liergou', '51764601', '585183514461', 100123, '2024-12-07 10:19:40'
         '2025-01-25 15:35:12'),
        (24, 'xiaofuge', '44846821', '059969746419', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001',
         's01', 'c01', 100.00, 10.00, 0, '411481433880', '100123_xiaofuge_1', '2025-01-25 15:43:07',
-        '2025-01-25 15:43:07');
+        '2025-01-25 15:43:07'),
+       (28, 'tin03', '46832479', '419093825062', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
+        'c01', 100.00, 10.00, 1, '581909866926', '100123_tin03_1', '2025-01-25 19:13:44', '2025-01-26 19:08:06'),
+       (29, 'tin01', '46832479', '117653092482', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
+        'c01', 100.00, 10.00, 1, '155123092895', '100123_tin01_1', '2025-01-25 19:14:47', '2025-01-26 19:06:42'),
+       (30, 'tin02', '46832479', '342460930778', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
+        'c01', 100.00, 10.00, 1, '451517755304', '100123_tin02_1', '2025-01-26 19:11:18', '2025-01-26 19:11:46');
+
 
 /*!40000 ALTER TABLE `group_buy_order_list`
+    ENABLE KEYS */;
+UNLOCK TABLES;
+
+
+# 转储表 notify_task
+# ------------------------------------------------------------
+
+DROP TABLE IF EXISTS `notify_task`;
+
+CREATE TABLE `notify_task`
+(
+    `id`             int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `activity_id`    bigint(8)        NOT NULL COMMENT '活动ID',
+    `team_id`        varchar(8)       NOT NULL COMMENT '拼单组队ID',
+    `notify_url`     varchar(128)     NOT NULL COMMENT '回调接口',
+    `notify_count`   int(8)           NOT NULL COMMENT '回调次数',
+    `notify_status`  tinyint(1)       NOT NULL COMMENT '回调状态【0初始、1完成、2重试、3失败】',
+    `parameter_json` varchar(256)     NOT NULL COMMENT '参数对象',
+    `create_time`    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`    datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
+LOCK TABLES `notify_task` WRITE;
+/*!40000 ALTER TABLE `notify_task`
+    DISABLE KEYS */;
+
+INSERT INTO `notify_task` (`id`, `activity_id`, `team_id`, `notify_url`, `notify_count`, `notify_status`,
+                           `parameter_json`, `create_time`, `update_time`)
+VALUES (1, 100123, '46832479', '暂无', 0, 0,
+        '{\"teamId\":\"46832479\",\"outTradeNoList\":[\"581909866926\",\"155123092895\",\"451517755304\"]}',
+        '2025-01-26 19:11:46', '2025-01-26 19:11:46');
+
+/*!40000 ALTER TABLE `notify_task`
     ENABLE KEYS */;
 UNLOCK TABLES;
 

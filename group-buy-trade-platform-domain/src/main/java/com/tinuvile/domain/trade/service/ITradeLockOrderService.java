@@ -12,7 +12,7 @@ import com.tinuvile.domain.trade.model.valobj.GroupBuyProcessVO;
  * @description
  * @since 2025/11/11
  */
-public interface ITradeOrderService {
+public interface ITradeLockOrderService {
 
     /**
      * 查询未支付的预购订单
