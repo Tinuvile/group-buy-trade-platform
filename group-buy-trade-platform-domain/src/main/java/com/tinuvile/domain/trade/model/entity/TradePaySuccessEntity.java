@@ -8,16 +8,25 @@ import lombok.NoArgsConstructor;
 
 /**
  * @author Tinuvile
- * @description 用户实体对象
- * @since 2025/11/11
+ * @description 交易支付订单实体对象
+ * @since 2025/11/14
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserEntity {
+public class TradePaySuccessEntity {
+
+    /** 渠道 */
+    private String source;
+
+    /** 来源 */
+    private String channel;
 
     /** 用户ID */
     private String userId;
+
+    /** 外部交易单号 */
+    private String outTradeNo;
 
 }
