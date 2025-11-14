@@ -266,7 +266,7 @@ public class TradeRepository implements ITradeRepository {
 
     @Override
     public boolean isSCRuleIntercept(String source, String channel) {
-        return dccService.isSCBlankIntercept(source, channel);
+        return dccService.isSCBlackIntercept(source, channel);
     }
 
 }

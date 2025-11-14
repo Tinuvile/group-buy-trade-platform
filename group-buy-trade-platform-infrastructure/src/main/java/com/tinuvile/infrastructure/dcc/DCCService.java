@@ -26,8 +26,8 @@ public class DCCService {
     private String cutRange;
 
     /* SC渠道黑名单 */
-    @DCCValue("scBlankList:s02c02")
-    private String scBlankList;
+    @DCCValue("scBlackList:s02c02")
+    private String scBlackList;
 
     /* 白名单用户列表，逗号分隔 */
     @DCCValue("whiteListUsers:EMPTY")
@@ -53,8 +53,8 @@ public class DCCService {
         return false;
     }
 
-    public boolean isSCBlankIntercept(String source, String channel) {
-        List<String> list = Arrays.asList(scBlankList.split(Constants.SPLIT));
+    public boolean isSCBlackIntercept(String source, String channel) {
+        List<String> list = Arrays.asList(scBlackList.split(Constants.SPLIT));
         return list.contains(source + channel);
     }
 

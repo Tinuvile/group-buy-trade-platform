@@ -32,7 +32,7 @@ public class SCRuleFilter implements ILogicHandler<TradeSettlementRuleCommandEnt
         // SC渠道黑名单拦截
         boolean intercept = repository.isSCRuleIntercept(requestParameter.getSource(), requestParameter.getChannel());
         if (intercept) {
-            log.error("{}{} 渠道黑名单拦截",requestParameter.getSource(),requestParameter.getChannel());
+            log.error("{} {} 渠道黑名单拦截",requestParameter.getSource(),requestParameter.getChannel());
             throw new AppException(ResponseCode.E0105);
         }
 
