@@ -17,7 +17,7 @@
     <insert id="insert" parameterType="com.tinuvile.infrastructure.dao.po.NotifyTask">
         insert into notify_task(activity_id, team_id, notify_url, notify_count, notify_status, parameter_json,
                                 create_time, update_time)
-        values(#{activityId}, #{teamId}, #{notifyUrl}, #{notifyCount}, #{notifyStatus}, #{parameterJson}, now(),now())
+        values (#{activityId}, #{teamId}, #{notifyUrl}, #{notifyCount}, #{notifyStatus}, #{parameterJson}, now(), now())
     </insert>
 
 </mapper>

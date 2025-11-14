@@ -3,8 +3,8 @@ package com.tinuvile.domain.trade.service.lock.filter;
 
 import com.tinuvile.domain.trade.adapter.repository.ITradeRepository;
 import com.tinuvile.domain.trade.model.entity.GroupBuyActivityEntity;
-import com.tinuvile.domain.trade.model.entity.TradeRuleCommandEntity;
-import com.tinuvile.domain.trade.model.entity.TradeRuleFilterBackEntity;
+import com.tinuvile.domain.trade.model.entity.TradeLockRuleCommandEntity;
+import com.tinuvile.domain.trade.model.entity.TradeLockRuleFilterBackEntity;
 import com.tinuvile.domain.trade.service.lock.factory.TradeRuleFilterFactory;
 import com.tinuvile.types.design.framework.link.model2.handler.ILogicHandler;
 import com.tinuvile.types.enums.ResponseCode;
@@ -21,13 +21,13 @@ import javax.annotation.Resource;
  */
 @Slf4j
 @Service
-public class UserTakeLimitRuleFilter implements ILogicHandler<TradeRuleCommandEntity, TradeRuleFilterFactory.DynamicContext, TradeRuleFilterBackEntity> {
+public class UserTakeLimitRuleFilter implements ILogicHandler<TradeLockRuleCommandEntity, TradeRuleFilterFactory.DynamicContext, TradeLockRuleFilterBackEntity> {
 
     @Resource
     private ITradeRepository repository;
 
     @Override
-    public TradeRuleFilterBackEntity apply(TradeRuleCommandEntity requestParameter, TradeRuleFilterFactory.DynamicContext dynamicParameter) throws Exception {
+    public TradeLockRuleFilterBackEntity apply(TradeLockRuleCommandEntity requestParameter, TradeRuleFilterFactory.DynamicContext dynamicParameter) throws Exception {
 
         log.info("交易规则过滤 - 用户参与次数校验{} activityId:{}", requestParameter.getUserId(), requestParameter.getActivityId());
 
@@ -41,7 +41,7 @@ public class UserTakeLimitRuleFilter implements ILogicHandler<TradeRuleCommandEn
             throw new AppException(ResponseCode.E0103);
         }
 
-        return TradeRuleFilterBackEntity.builder()
+        return TradeLockRuleFilterBackEntity.builder()
                 .userTakeOrderCount(count)
                 .build();
     }

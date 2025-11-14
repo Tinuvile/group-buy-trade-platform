@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 /**
  * @author Tinuvile
  * @description 拼团组队实体
@@ -35,5 +37,11 @@ public class GroupBuyTeamEntity {
 
     /** 状态（0-拼单中、1-完成、2-失败） */
     private GroupBuyOrderEnumVO status;
+
+     /** 拼团开始时间 - 参与拼团时间 */
+    private Date validStartTime;
+
+    /** 拼团结束时间 - 拼团有效时长 */
+    private Date validEndTime;
 
 }

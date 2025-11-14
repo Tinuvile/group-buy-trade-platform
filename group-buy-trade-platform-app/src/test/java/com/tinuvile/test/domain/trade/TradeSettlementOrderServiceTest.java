@@ -27,7 +27,7 @@ public class TradeSettlementOrderServiceTest {
     private ITradeSettlementOrderService tradeSettlementOrderService;
 
     @Test
-    public void test_settlementMarketPayOrder() {
+    public void test_settlementMarketPayOrder() throws Exception {
         TradePaySuccessEntity tradePaySuccessEntity = new TradePaySuccessEntity();
         tradePaySuccessEntity.setSource("s01");
         tradePaySuccessEntity.setChannel("c01");

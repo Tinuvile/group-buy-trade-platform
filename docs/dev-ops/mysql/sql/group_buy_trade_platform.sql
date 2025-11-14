@@ -216,20 +216,22 @@ DROP TABLE IF EXISTS `group_buy_order`;
 
 CREATE TABLE `group_buy_order`
 (
-    `id`              int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-    `team_id`         varchar(8)       NOT NULL COMMENT '拼单组队ID',
-    `activity_id`     bigint(8)        NOT NULL COMMENT '活动ID',
-    `source`          varchar(8)       NOT NULL COMMENT '来源',
-    `channel`         varchar(8)       NOT NULL COMMENT '渠道',
-    `original_price`  decimal(8, 2)    NOT NULL COMMENT '原始价格',
-    `deduction_price` decimal(8, 2)    NOT NULL COMMENT '折扣金额',
-    `pay_price`       decimal(8, 2)    NOT NULL COMMENT '支付价格',
-    `target_count`    int(5)           NOT NULL COMMENT '目标数量',
-    `complete_count`  int(5)           NOT NULL COMMENT '完成数量',
-    `lock_count`      int(5)           NOT NULL COMMENT '锁单数量',
-    `status`          tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态（0-拼单中、1-完成、2-失败）',
-    `create_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `id`               int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增ID',
+    `team_id`          varchar(8)       NOT NULL COMMENT '拼单组队ID',
+    `activity_id`      bigint(8)        NOT NULL COMMENT '活动ID',
+    `source`           varchar(8)       NOT NULL COMMENT '来源',
+    `channel`          varchar(8)       NOT NULL COMMENT '渠道',
+    `original_price`   decimal(8, 2)    NOT NULL COMMENT '原始价格',
+    `deduction_price`  decimal(8, 2)    NOT NULL COMMENT '折扣金额',
+    `pay_price`        decimal(8, 2)    NOT NULL COMMENT '支付价格',
+    `target_count`     int(5)           NOT NULL COMMENT '目标数量',
+    `complete_count`   int(5)           NOT NULL COMMENT '完成数量',
+    `lock_count`       int(5)           NOT NULL COMMENT '锁单数量',
+    `status`           tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态（0-拼单中、1-完成、2-失败）',
+    `valid_start_time` datetime         NOT NULL COMMENT '拼团开始时间',
+    `valid_end_time`   datetime         NOT NULL COMMENT '拼团结束时间',
+    `create_time`      datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time`      datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_team_id` (`team_id`)
 ) ENGINE = InnoDB
@@ -240,26 +242,11 @@ LOCK TABLES `group_buy_order` WRITE;
     DISABLE KEYS */;
 
 INSERT INTO `group_buy_order` (`id`, `team_id`, `activity_id`, `source`, `channel`, `original_price`, `deduction_price`,
-                               `pay_price`, `target_count`, `complete_count`, `lock_count`, `status`, `create_time`,
-                               `update_time`)
-VALUES (7, '64675056', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 3, 0, 0, '2025-01-11 15:13:08',
-        '2025-01-11 15:13:47'),
-       (8, '31724477', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 0, 3, 0, '2025-01-11 16:02:23',
-        '2025-01-11 16:06:49'),
-       (9, '33063446', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 0, 3, 0, '2025-01-11 18:32:17',
-        '2025-01-11 18:33:35'),
-       (10, 'RNPZQnlL', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 0, 1, 0, '2025-01-11 19:15:54',
-        '2025-01-11 19:15:54'),
-       (11, 'tQvVMQWS', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 0, 1, 0, '2025-01-11 19:16:30',
-        '2025-01-11 19:16:30'),
-       (12, '64451200', 100123, 's01', 'c01', 100.00, 90.00, 0.00, 3, 0, 2, 0, '2025-01-11 19:18:01',
-        '2025-01-11 19:18:38'),
-       (14, '31288634', 100123, 's01', 'c01', 100.00, 10.00, 90.00, 3, 0, 1, 0, '2025-01-25 15:31:09',
-        '2025-01-25 15:31:09'),
-       (15, '51764601', 100123, 's01', 'c01', 100.00, 10.00, 90.00, 3, 0, 1, 0, '2025-01-25 15:35:12',
-        '2025-01-25 15:35:12'),
-       (16, '44846821', 100123, 's01', 'c01', 100.00, 10.00, 90.00, 3, 0, 1, 0, '2025-01-25 15:43:07',
-        '2025-01-25 15:43:07');
+                               `pay_price`, `target_count`, `complete_count`, `lock_count`, `status`,
+                               `valid_start_time`,
+                               `valid_end_time`, `create_time`, `update_time`)
+VALUES (1, '93125665', 100123, 's01', 'c01', 100.00, 10.00, 90.00, 3, 2, 2, 0, '2025-01-29 16:50:34',
+        '2025-01-30 17:05:34', '2025-01-29 16:50:34', '2025-01-29 17:13:02');
 
 /*!40000 ALTER TABLE `group_buy_order`
     ENABLE KEYS */;
@@ -287,6 +274,7 @@ CREATE TABLE `group_buy_order_list`
     `deduction_price` decimal(8, 2)    NOT NULL COMMENT '折扣金额',
     `status`          tinyint(1)       NOT NULL DEFAULT '0' COMMENT '状态；0初始锁定、1消费完成、2用户退单',
     `out_trade_no`    varchar(12)      NOT NULL COMMENT '外部交易单号-确保外部调用唯一幂等',
+    `out_trade_time`  datetime                  DEFAULT NULL COMMENT '外部交易时间',
     `biz_id`          varchar(64)      NOT NULL COMMENT '业务唯一ID',
     `create_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`     datetime         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -303,19 +291,13 @@ LOCK TABLES `group_buy_order_list` WRITE;
 
 INSERT INTO `group_buy_order_list` (`id`, `user_id`, `team_id`, `order_id`, `activity_id`, `start_time`, `end_time`,
                                     `goods_id`, `source`, `channel`, `original_price`, `deduction_price`, `status`,
-                                    `out_trade_no`, `biz_id`, `create_time`, `update_time`)
-VALUES (23, 'liergou', '51764601', '585183514461', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001',
-        's01', 'c01', 100.00, 10.00, 0, '843867108777', '100123_liergou_1', '2025-01-25 15:35:12',
-        '2025-01-25 15:35:12'),
-       (24, 'xiaofuge', '44846821', '059969746419', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001',
-        's01', 'c01', 100.00, 10.00, 0, '411481433880', '100123_xiaofuge_1', '2025-01-25 15:43:07',
-        '2025-01-25 15:43:07'),
-       (28, 'tin03', '46832479', '419093825062', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
-        'c01', 100.00, 10.00, 1, '581909866926', '100123_tin03_1', '2025-01-25 19:13:44', '2025-01-26 19:08:06'),
-       (29, 'tin01', '46832479', '117653092482', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
-        'c01', 100.00, 10.00, 1, '155123092895', '100123_tin01_1', '2025-01-25 19:14:47', '2025-01-26 19:06:42'),
-       (30, 'tin02', '46832479', '342460930778', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
-        'c01', 100.00, 10.00, 1, '451517755304', '100123_tin02_1', '2025-01-26 19:11:18', '2025-01-26 19:11:46');
+                                    `out_trade_no`, `out_trade_time`, `biz_id`, `create_time`, `update_time`)
+VALUES (37, 'tin01', '93125665', '142771127603', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
+        'c01', 100.00, 10.00, 1, '514260871457', '0000-00-00 00:00:00', '100123_xfg01_1', '2025-01-29 16:50:34',
+        '2025-01-29 16:54:10'),
+       (38, 'tin03', '93125665', '357868243232', 100123, '2024-12-07 10:19:40', '2025-12-07 10:19:40', '9890001', 's01',
+        'c01', 100.00, 10.00, 1, '075605651839', '2025-01-29 17:13:02', '100123_xfg04_1', '2025-01-29 17:10:12',
+        '2025-01-29 17:13:02');
 
 
 /*!40000 ALTER TABLE `group_buy_order_list`

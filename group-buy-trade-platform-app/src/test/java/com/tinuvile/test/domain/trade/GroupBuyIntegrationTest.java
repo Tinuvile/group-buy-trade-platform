@@ -149,6 +149,7 @@ public class GroupBuyIntegrationTest {
                 .activityName(activity.getActivityName())
                 .startTime(activity.getStartTime())
                 .endTime(activity.getEndTime())
+                .validTime(activity.getValidTime())
                 .targetCount(activity.getTarget())
                 .build();
     }
