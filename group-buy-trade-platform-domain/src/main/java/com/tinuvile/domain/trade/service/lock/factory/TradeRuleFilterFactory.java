@@ -2,8 +2,8 @@ package com.tinuvile.domain.trade.service.lock.factory;
 
 
 import com.tinuvile.domain.trade.model.entity.GroupBuyActivityEntity;
-import com.tinuvile.domain.trade.model.entity.TradeRuleCommandEntity;
-import com.tinuvile.domain.trade.model.entity.TradeRuleFilterBackEntity;
+import com.tinuvile.domain.trade.model.entity.TradeLockRuleCommandEntity;
+import com.tinuvile.domain.trade.model.entity.TradeLockRuleFilterBackEntity;
 import com.tinuvile.domain.trade.service.lock.filter.ActivityUsabilityRuleFilter;
 import com.tinuvile.domain.trade.service.lock.filter.UserTakeLimitRuleFilter;
 import com.tinuvile.types.design.framework.link.model2.LinkArmory;
@@ -26,9 +26,9 @@ import org.springframework.stereotype.Service;
 public class TradeRuleFilterFactory {
 
     @Bean("tradeRuleFilter")
-    public BusinessLinkedList<TradeRuleCommandEntity, TradeRuleFilterFactory.DynamicContext, TradeRuleFilterBackEntity> tradeRuleFilter(ActivityUsabilityRuleFilter activityUsabilityRuleFilter, UserTakeLimitRuleFilter userTakeLimitRuleFilter) {
+    public BusinessLinkedList<TradeLockRuleCommandEntity, TradeRuleFilterFactory.DynamicContext, TradeLockRuleFilterBackEntity> tradeRuleFilter(ActivityUsabilityRuleFilter activityUsabilityRuleFilter, UserTakeLimitRuleFilter userTakeLimitRuleFilter) {
         // 组装链
-        LinkArmory<TradeRuleCommandEntity, TradeRuleFilterFactory.DynamicContext, TradeRuleFilterBackEntity> linkArmory =
+        LinkArmory<TradeLockRuleCommandEntity, TradeRuleFilterFactory.DynamicContext, TradeLockRuleFilterBackEntity> linkArmory =
                 new LinkArmory<>("交易规则过滤链", activityUsabilityRuleFilter, userTakeLimitRuleFilter);
 
         // 链对象

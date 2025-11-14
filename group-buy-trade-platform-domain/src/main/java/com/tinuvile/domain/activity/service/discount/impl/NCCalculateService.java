@@ -3,7 +3,6 @@ package com.tinuvile.domain.activity.service.discount.impl;
 
 import com.tinuvile.domain.activity.model.valobj.GroupBuyActivityDiscountVO;
 import com.tinuvile.domain.activity.service.discount.AbstractDiscountCalculateService;
-import com.tinuvile.types.common.Constants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

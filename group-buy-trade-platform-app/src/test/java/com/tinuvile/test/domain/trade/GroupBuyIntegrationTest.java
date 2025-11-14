@@ -6,12 +6,7 @@ import com.tinuvile.domain.activity.model.entity.MarketProductEntity;
 import com.tinuvile.domain.activity.model.entity.TrialBalanceEntity;
 import com.tinuvile.domain.activity.model.valobj.GroupBuyActivityDiscountVO;
 import com.tinuvile.domain.activity.service.IIndexGroupBuyMarketService;
-import com.tinuvile.domain.trade.model.entity.MarketPayOrderEntity;
-import com.tinuvile.domain.trade.model.entity.PayActivityEntity;
-import com.tinuvile.domain.trade.model.entity.PayDiscountEntity;
-import com.tinuvile.domain.trade.model.entity.TradePaySettlementEntity;
-import com.tinuvile.domain.trade.model.entity.TradePaySuccessEntity;
-import com.tinuvile.domain.trade.model.entity.UserEntity;
+import com.tinuvile.domain.trade.model.entity.*;
 import com.tinuvile.domain.trade.model.valobj.GroupBuyProcessVO;
 import com.tinuvile.domain.trade.service.ITradeLockOrderService;
 import com.tinuvile.domain.trade.service.ITradeSettlementOrderService;
@@ -25,6 +20,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Date;
 
 /**
  * @author Tinuvile
@@ -69,7 +65,7 @@ public class GroupBuyIntegrationTest {
         log.info("📊 第1步：商品试算");
         TrialBalanceEntity trial = indexGroupBuyMarketService.indexMarketTrial(
                 buildMarketProduct(userId, activityId));
-        log.info("✅ 试算完成，优惠金额: {}, 支付金额: {}", 
+        log.info("✅ 试算完成，优惠金额: {}, 支付金额: {}",
                 trial.getDeductionPrice(), trial.getPayPrice());
 
         log.info("🔒 第2步：拼团锁单（创建新团）");
@@ -77,7 +73,7 @@ public class GroupBuyIntegrationTest {
                 buildUserEntity(userId),
                 buildPayActivity(trial, null), // null表示创建新团
                 buildPayDiscount(trial, outTradeNo));
-        log.info("✅ 锁单完成，订单ID: {}, 团队ID: {}", 
+        log.info("✅ 锁单完成，订单ID: {}, 团队ID: {}",
                 lockResult.getOrderId(), lockResult.getTeamId());
 
         log.info("💰 第3步：支付结算");
@@ -94,7 +90,7 @@ public class GroupBuyIntegrationTest {
         assert progress.getCompleteCount() == 1 : "完成数量应为1";
         assert progress.getTargetCount() == 3 : "目标数量应为3";
 
-        log.info("✅ 单用户拼团流程验证通过：拼团进度 {}/{}", 
+        log.info("✅ 单用户拼团流程验证通过：拼团进度 {}/{}",
                 progress.getCompleteCount(), progress.getTargetCount());
         log.info("🎉 拼团完整流程集成测试成功完成！");
     }
@@ -149,6 +145,7 @@ public class GroupBuyIntegrationTest {
                 .activityName(activity.getActivityName())
                 .startTime(activity.getStartTime())
                 .endTime(activity.getEndTime())
+                .validTime(activity.getValidTime())
                 .targetCount(activity.getTarget())
                 .build();
     }
@@ -178,6 +175,7 @@ public class GroupBuyIntegrationTest {
         paySuccess.setChannel("c01");
         paySuccess.setUserId(userId);
         paySuccess.setOutTradeNo(outTradeNo);
+        paySuccess.setOutTradeTime(new Date());
         return paySuccess;
     }
 

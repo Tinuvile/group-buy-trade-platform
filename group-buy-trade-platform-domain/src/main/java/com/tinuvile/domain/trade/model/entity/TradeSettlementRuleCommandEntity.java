@@ -10,14 +10,14 @@ import java.util.Date;
 
 /**
  * @author Tinuvile
- * @description 交易支付订单实体对象
+ * @description 拼团交易结算规则命令
  * @since 2025/11/14
  */
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TradePaySuccessEntity {
+public class TradeSettlementRuleCommandEntity {
 
     /** 来源 */
     private String source;

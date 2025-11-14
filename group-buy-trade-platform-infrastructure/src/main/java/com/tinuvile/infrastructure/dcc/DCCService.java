@@ -2,8 +2,12 @@ package com.tinuvile.infrastructure.dcc;
 
 
 import com.tinuvile.types.annotations.DCCValue;
+import com.tinuvile.types.common.Constants;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author Tinuvile
@@ -20,6 +24,10 @@ public class DCCService {
     /* 切流范围 0-100 */
     @DCCValue("cutRange:100")
     private String cutRange;
+
+    /* SC渠道黑名单 */
+    @DCCValue("scBlackList:s02c02")
+    private String scBlackList;
 
     /* 白名单用户列表，逗号分隔 */
     @DCCValue("whiteListUsers:EMPTY")
@@ -43,6 +51,11 @@ public class DCCService {
         }
 
         return false;
+    }
+
+    public boolean isSCBlackIntercept(String source, String channel) {
+        List<String> list = Arrays.asList(scBlackList.split(Constants.SPLIT));
+        return list.contains(source + channel);
     }
 
     public boolean isWhiteListSwitch() {
