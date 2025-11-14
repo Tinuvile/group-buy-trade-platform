@@ -14,7 +14,7 @@ import com.tinuvile.domain.trade.model.entity.PayActivityEntity;
 import com.tinuvile.domain.trade.model.entity.PayDiscountEntity;
 import com.tinuvile.domain.trade.model.entity.UserEntity;
 import com.tinuvile.domain.trade.model.valobj.GroupBuyProcessVO;
-import com.tinuvile.domain.trade.service.ITradeLockOrderService;
+import com.tinuvile.domain.trade.service.ITradeOrderService;
 import com.tinuvile.types.enums.ResponseCode;
 import com.tinuvile.types.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +39,7 @@ public class MarketTradeController implements IMarketTradeService {
     private IIndexGroupBuyMarketService indexGroupBuyMarketService;
 
     @Resource
-    private ITradeLockOrderService tradeOrderService;
+    private ITradeOrderService tradeOrderService;
 
     /**
      * 拼团交易锁定订单

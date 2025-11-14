@@ -1,11 +1,11 @@
-package com.tinuvile.domain.trade.service.lock.filter;
+package com.tinuvile.domain.trade.service.filter;
 
 
 import com.tinuvile.domain.trade.adapter.repository.ITradeRepository;
 import com.tinuvile.domain.trade.model.entity.GroupBuyActivityEntity;
 import com.tinuvile.domain.trade.model.entity.TradeRuleCommandEntity;
 import com.tinuvile.domain.trade.model.entity.TradeRuleFilterBackEntity;
-import com.tinuvile.domain.trade.service.lock.factory.TradeRuleFilterFactory;
+import com.tinuvile.domain.trade.service.factory.TradeRuleFilterFactory;
 import com.tinuvile.types.design.framework.link.model2.handler.ILogicHandler;
 import com.tinuvile.types.enums.ResponseCode;
 import com.tinuvile.types.exception.AppException;

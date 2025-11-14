@@ -10,7 +10,7 @@ import java.util.Date;
 
 /**
  * @author Tinuvile
- * @description 支付活动实体对象
+ * @description
  * @since 2025/11/11
  */
 @Data
