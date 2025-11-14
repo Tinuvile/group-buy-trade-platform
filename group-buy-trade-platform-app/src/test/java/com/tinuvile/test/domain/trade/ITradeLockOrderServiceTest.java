@@ -2,6 +2,7 @@ package com.tinuvile.test.domain.trade;
 
 
 import com.alibaba.fastjson.JSON;
+import com.tinuvile.api.IDCCService;
 import com.tinuvile.domain.activity.model.entity.MarketProductEntity;
 import com.tinuvile.domain.activity.model.entity.TrialBalanceEntity;
 import com.tinuvile.domain.activity.model.valobj.GroupBuyActivityDiscountVO;
@@ -37,10 +38,28 @@ public class ITradeLockOrderServiceTest {
     @Resource
     private ITradeLockOrderService tradeOrderService;
 
+    @Resource
+    private IDCCService dccService;
+
     @Test
     @Transactional
     @Rollback
     public void test_lockMarketPayOrder() throws Exception {
+
+        // 确保测试环境配置正确
+        try {
+            // 检查并设置所需的DCC配置
+            dccService.updateConfig("downgradeSwitch", "0");    // 关闭降级
+            dccService.updateConfig("cutRange", "100");         // 100%通过率
+            dccService.updateConfig("whiteListSwitch", "0");    // 关闭白名单
+
+            // 等待配置生效
+            Thread.sleep(1000);
+            log.info("✅ DCC配置重置完成，开始执行测试");
+        } catch (Exception e) {
+            log.warn("⚠️ DCC配置重置失败: {}", e.getMessage());
+        }
+
         // 入参信息
         Long activityId = 100123L;
         String userId = "TestUser001";
