@@ -17,10 +17,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class TradePaySettlementEntity {
 
-    /** 渠道 */
+    /** 来源 */
     private String source;
 
-    /** 来源 */
+    /** 渠道 */
     private String channel;
 
     /** 用户ID */

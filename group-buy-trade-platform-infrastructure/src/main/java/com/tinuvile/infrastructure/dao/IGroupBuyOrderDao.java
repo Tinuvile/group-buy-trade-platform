@@ -20,7 +20,7 @@ public interface IGroupBuyOrderDao {
 
     int updateSubtractionLockCount(String teamId);
 
-    int updateOrderStatus2COMPLETE(String teamId);
+    Integer updateOrderStatus2COMPLETE(String teamId);
 
     GroupBuyOrder queryGroupBuyProgress(String teamId);
 
