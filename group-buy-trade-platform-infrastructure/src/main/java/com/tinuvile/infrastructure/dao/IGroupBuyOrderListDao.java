@@ -20,7 +20,7 @@ public interface IGroupBuyOrderListDao {
 
     Integer queryOrderCountByActivityId(GroupBuyOrderList groupBuyOrderListReq);
 
-    int updateOrderStatus2COMPLETE(GroupBuyOrderList groupBuyOrderListReq);
+    Integer updateOrderStatus2COMPLETE(GroupBuyOrderList groupBuyOrderListReq);
 
     List<String> queryGroupBuyCompleteOrderOutTradeNoListByTeamId(String teamId);
 
