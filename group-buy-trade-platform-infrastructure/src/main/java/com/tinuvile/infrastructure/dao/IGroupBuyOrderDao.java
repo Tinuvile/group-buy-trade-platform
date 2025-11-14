@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 /**
  * @author Tinuvile
- * @description
+ * @description 用户拼单
  * @since 2025/11/11
  */
 @Mapper
@@ -16,8 +16,14 @@ public interface IGroupBuyOrderDao {
 
     int updateAddLockCount(String teamId);
 
+    int updateAddCompleteCount(String teamId);
+
     int updateSubtractionLockCount(String teamId);
 
+    int updateOrderStatus2COMPLETE(String teamId);
+
     GroupBuyOrder queryGroupBuyProgress(String teamId);
+
+    GroupBuyOrder queryGroupBuyTeamByTeamId(String teamId);
 
 }

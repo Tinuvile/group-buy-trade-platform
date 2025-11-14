@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 
 /**
  * @author Tinuvile
- * @description
+ * @description 支付折扣实体对象
  * @since 2025/11/11
  */
 @Data
