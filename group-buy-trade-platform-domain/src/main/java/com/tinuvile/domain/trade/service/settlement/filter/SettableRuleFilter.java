@@ -1,10 +1,48 @@
 package com.tinuvile.domain.trade.service.settlement.filter;
 
 
+import com.tinuvile.domain.trade.adapter.repository.ITradeRepository;
+import com.tinuvile.domain.trade.model.entity.*;
+import com.tinuvile.domain.trade.service.settlement.factory.TradeSettlementRuleFilterFactory;
+import com.tinuvile.types.design.framework.link.model2.handler.ILogicHandler;
+import com.tinuvile.types.enums.ResponseCode;
+import com.tinuvile.types.exception.AppException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.Date;
+
 /**
  * @author Tinuvile
  * @description
  * @since 2025/11/14
  */
-public class SettableRuleFilter {
+@Slf4j
+@Service
+public class SettableRuleFilter implements ILogicHandler<TradeSettlementRuleCommandEntity, TradeSettlementRuleFilterFactory.DynamicContext, TradeSettlementRuleFilterBackEntity> {
+
+    @Resource
+    private ITradeRepository repository;
+
+    @Override
+    public TradeSettlementRuleFilterBackEntity apply(TradeSettlementRuleCommandEntity requestParameter, TradeSettlementRuleFilterFactory.DynamicContext dynamicParameter) throws Exception {
+
+        log.info("结算规则过滤 - 有效时间校验{} outTradeNo:{}", requestParameter.getUserId(), requestParameter.getOutTradeNo());
+
+        MarketPayOrderEntity marketPayOrderEntity = dynamicParameter.getMarketPayOrderEntity();
+
+        GroupBuyTeamEntity groupBuyTeamEntity = repository.queryGroupBuyTeamByTeamId(marketPayOrderEntity.getTeamId());
+
+        Date outTradeTime = requestParameter.getOutTradeTime();
+
+        if (!outTradeTime.before(groupBuyTeamEntity.getValidEndTime())) {
+            log.error("订单交易时间不在拼团有效时间范围内");
+            throw new AppException(ResponseCode.E0106);
+        }
+
+        dynamicParameter.setGroupBuyTeamEntity(groupBuyTeamEntity);
+
+        return next(requestParameter, dynamicParameter);
+    }
 }

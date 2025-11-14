@@ -29,4 +29,6 @@ public interface ITradeRepository {
 
     void settlementMarketPayOrder(GroupBuyTeamSettlementAggregate groupBuyTeamSettlementAggregate);
 
+    boolean isSCRuleIntercept(String source, String channel);
+
 }
