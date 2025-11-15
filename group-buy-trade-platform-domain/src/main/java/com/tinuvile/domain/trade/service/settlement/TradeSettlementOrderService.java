@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Map;
 
 /**
  * @author Tinuvile
@@ -55,6 +56,7 @@ public class TradeSettlementOrderService implements ITradeSettlementOrderService
                 .status(tradeSettlementRuleFilterBackEntity.getStatus())
                 .validStartTime(tradeSettlementRuleFilterBackEntity.getValidStartTime())
                 .validEndTime(tradeSettlementRuleFilterBackEntity.getValidEndTime())
+                .notifyUrl(tradeSettlementRuleFilterBackEntity.getNotifyUrl())
                 .build();
 
         // 构建聚合对象
@@ -65,7 +67,12 @@ public class TradeSettlementOrderService implements ITradeSettlementOrderService
                 .build();
 
         // 拼团交易结算
-        repository.settlementMarketPayOrder(groupBuyTeamSettlementAggregate);
+        boolean isNotify = repository.settlementMarketPayOrder(groupBuyTeamSettlementAggregate);
+
+        // 组队回调处理 - 处理失败也会有定时任务补偿
+        if (isNotify) {
+            Map<String, Integer> notifyResultMap;
+        }
 
         // 返回结算信息
         return TradePaySettlementEntity.builder()
