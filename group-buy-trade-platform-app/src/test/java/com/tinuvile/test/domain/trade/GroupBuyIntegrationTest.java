@@ -163,6 +163,7 @@ public class GroupBuyIntegrationTest {
                 .deductionPrice(trial.getDeductionPrice())
                 .payPrice(trial.getPayPrice())
                 .outTradeNo(outTradeNo)
+                .notifyUrl("https://test.com")
                 .build();
     }
 
