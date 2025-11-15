@@ -15,6 +15,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +30,7 @@ import java.util.Date;
  */
 @Slf4j
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class GroupBuyIntegrationTest {
 
     @Resource
@@ -43,6 +44,9 @@ public class GroupBuyIntegrationTest {
 
     @Resource
     private IDCCService dccService;
+
+    @LocalServerPort
+    private int port;
 
     /**
      * 完整拼团流程测试：从商品试算 → 锁单 → 支付结算
@@ -163,6 +167,7 @@ public class GroupBuyIntegrationTest {
                 .deductionPrice(trial.getDeductionPrice())
                 .payPrice(trial.getPayPrice())
                 .outTradeNo(outTradeNo)
+                .notifyUrl("http://127.0.0.1:" + port + "/api/v1/test/group_buy_notify")
                 .build();
     }
 

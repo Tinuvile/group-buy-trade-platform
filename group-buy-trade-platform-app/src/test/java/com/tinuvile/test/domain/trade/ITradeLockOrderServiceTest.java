@@ -67,6 +67,7 @@ public class ITradeLockOrderServiceTest {
         String source = "s01";
         String channel = "c01";
         String outTradeNo = "TO" + (System.currentTimeMillis() % 10000000000L);
+        String notifyUrl = "https://test.com";
 
         // 1. 获取试算优惠，有【activityId】优先使用
         TrialBalanceEntity trialBalanceEntity = indexGroupBuyMarketService.indexMarketTrial(MarketProductEntity.builder()
@@ -107,6 +108,7 @@ public class ITradeLockOrderServiceTest {
                         .deductionPrice(trialBalanceEntity.getDeductionPrice())
                         .payPrice(trialBalanceEntity.getPayPrice())
                         .outTradeNo(outTradeNo)
+                        .notifyUrl(notifyUrl)
                         .build());
 
         log.info("测试结果(New):{}",JSON.toJSONString(marketPayOrderEntityNew));

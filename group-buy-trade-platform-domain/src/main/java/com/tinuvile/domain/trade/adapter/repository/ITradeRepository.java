@@ -6,7 +6,10 @@ import com.tinuvile.domain.trade.model.aggregate.GroupBuyTeamSettlementAggregate
 import com.tinuvile.domain.trade.model.entity.GroupBuyActivityEntity;
 import com.tinuvile.domain.trade.model.entity.GroupBuyTeamEntity;
 import com.tinuvile.domain.trade.model.entity.MarketPayOrderEntity;
+import com.tinuvile.domain.trade.model.entity.NotifyTaskEntity;
 import com.tinuvile.domain.trade.model.valobj.GroupBuyProcessVO;
+
+import java.util.List;
 
 /**
  * @author Tinuvile
@@ -27,8 +30,18 @@ public interface ITradeRepository {
 
     GroupBuyTeamEntity queryGroupBuyTeamByTeamId(String teamId);
 
-    void settlementMarketPayOrder(GroupBuyTeamSettlementAggregate groupBuyTeamSettlementAggregate);
+    boolean settlementMarketPayOrder(GroupBuyTeamSettlementAggregate groupBuyTeamSettlementAggregate);
 
     boolean isSCRuleIntercept(String source, String channel);
+
+    List<NotifyTaskEntity> queryUnExecutedNotifyTaskList();
+
+    List<NotifyTaskEntity> queryUnExecutedNotifyTaskList(String teamId);
+
+    int updateNotifyTaskStatusSuccess(String teamId);
+
+    int updateNotifyTaskStatusError(String teamId);
+
+    int updateNotifyTaskStatusRetry(String teamId);
 
 }
