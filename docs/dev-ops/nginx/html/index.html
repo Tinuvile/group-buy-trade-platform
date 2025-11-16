@@ -58,12 +58,29 @@
     </div>
 
 
+    <!-- 登录弹窗 -->
+    <div class="mask" id="loginMask">
+        <div class="glass-container" id="glass">
+            <div class="login-box">
+                <h3>欢迎登录 - 拼团小商城</h3>
+                <input id="username" placeholder="用户名">
+                <input id="password" placeholder="密码" type="password">
+                <button onclick="handleLogin()">登录</button>
+                <div class="login-footer">
+                    <a href="#" onclick="closeLogin(); return false;">取消登录</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 支付弹窗 -->
     <div class="mask" id="payMask">
         <div class="pay-box">
             <h3>请扫码支付</h3>
             <div>支付金额 ¥ 40</div>
-            <div class="qrcode">二维码</div>
+            <div class="qrcode">
+                <img src="./images/QRcode.png" alt="支付二维码" />
+            </div>
             <div class="pay-btns">
                 <button class="cancel" onclick="closePay()">取消支付</button>
                 <button class="done" onclick="closePay()">支付完成</button>

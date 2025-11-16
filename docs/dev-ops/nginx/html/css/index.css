@@ -24,7 +24,7 @@ body {
     height: 260px;
     position: relative;
     overflow: hidden;
-    margin: 15px 12px 0 12px;
+    margin: 30px 12px 0 12px;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
@@ -187,6 +187,127 @@ body {
     z-index: 1000;
 }
 
+/* 登录弹窗保持简洁背景 */
+#loginMask {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+
+/* 玻璃容器效果 - 登录弹窗 (简洁黑白色调) */
+.glass-container {
+    width: 90%;
+    max-width: 500px;
+    min-height: 400px;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    border-radius: 40px;
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        rgba(0, 0, 0, 0.2) 0 8px 32px,
+        inset rgba(255,255,255,0.1) 0 1px 0;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-right: 1px solid rgba(0,0,0,0.1);
+    box-sizing: border-box;
+}
+
+/* 登录弹窗内容 */
+.login-box {
+    background: transparent;
+    width: 100%;
+    max-width: 350px;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.login-box h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 24px;
+    font-weight: 300;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.login-box input {
+    width: 100%;
+    padding: 15px 20px;
+    margin-top: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 25px;
+    font-size: 14px;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.login-box input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.login-box input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+.login-box button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 25px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.login-box button:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.login-box button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.login-footer {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.login-footer a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.login-footer a:hover {
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
 
 /* 支付弹窗 */
 .pay-box {
@@ -204,11 +325,18 @@ body {
 .qrcode {
     width: 160px;
     height: 160px;
-    background: #f0f0f0;
     margin: 20px auto;
     display: flex;
     justify-content: center;
     align-items: center;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.qrcode img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     border-radius: 6px;
 }
 
@@ -242,7 +370,7 @@ body {
     .swiper {
         height: 300px;
         width: calc(100% - 40px);
-        margin: 20px 20px 0 20px;
+        margin: 35px 20px 0 20px;
         border-radius: 10px;
         box-shadow: 0 3px 12px rgba(0,0,0,0.12);
     }
@@ -250,6 +378,31 @@ body {
     .swiper img {
         height: 300px;
         border-radius: 10px;
+    }
+    
+    .glass-container {
+        width: 85%;
+        max-width: 550px;
+        min-height: 420px;
+        padding: 25px;
+        border-radius: 45px;
+    }
+    
+    .login-box h3 {
+        font-size: 26px;
+        margin-bottom: 25px;
+    }
+    
+    .login-box input {
+        padding: 16px 22px;
+        font-size: 14px;
+        margin-top: 16px;
+    }
+    
+    .login-box button {
+        padding: 16px;
+        font-size: 16px;
+        margin-top: 25px;
     }
     
     .container {
@@ -276,7 +429,7 @@ body {
     .swiper {
         height: 320px;
         width: calc(100% - 60px);
-        margin: 25px 30px 0 30px;
+        margin: 40px 30px 0 30px;
         border-radius: 12px;
         box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     }
@@ -284,6 +437,47 @@ body {
     .swiper img {
         height: 320px;
         border-radius: 12px;
+    }
+    
+    .glass-container {
+        width: 85%;
+        max-width: 600px;
+        min-height: 450px;
+        padding: 30px;
+        border-radius: 50px;
+    }
+    
+    .login-box {
+        max-width: 400px;
+    }
+    
+    .login-box h3 {
+        font-size: 28px;
+        margin-bottom: 30px;
+        font-weight: 300;
+    }
+    
+    .login-box input {
+        padding: 18px 25px;
+        font-size: 15px;
+        margin-top: 18px;
+        border-radius: 30px;
+    }
+    
+    .login-box button {
+        padding: 18px;
+        font-size: 17px;
+        margin-top: 30px;
+        border-radius: 30px;
+    }
+    
+    .login-footer {
+        margin-top: 30px;
+        padding-top: 25px;
+    }
+    
+    .login-footer a {
+        font-size: 15px;
     }
     
     .container {
@@ -346,7 +540,7 @@ body {
     .swiper {
         height: 220px;
         width: calc(100% - 16px);
-        margin: 12px 8px 0 8px;
+        margin: 25px 8px 0 8px;
         border-radius: 6px;
         box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
@@ -409,6 +603,30 @@ body {
         padding: 15px;
     }
     
+    .glass-container {
+        width: 95%;
+        min-height: 350px;
+        padding: 15px;
+        border-radius: 30px;
+    }
+    
+    .login-box h3 {
+        font-size: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .login-box input {
+        padding: 12px 18px;
+        font-size: 13px;
+        margin-top: 12px;
+    }
+    
+    .login-box button {
+        padding: 12px;
+        font-size: 15px;
+        margin-top: 20px;
+    }
+    
     .pay-box {
         width: 95%;
         padding: 16px;
@@ -420,12 +638,52 @@ body {
         height: 120px;
         margin: 12px auto;
     }
+    
+    .qrcode img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 4px;
+    }
 }
 
 /* 极小屏幕优化 */
 @media (max-width: 320px) {
     .mask {
+        padding: 8px;
+    }
+    
+    .glass-container {
+        width: 98%;
+        min-height: 300px;
+        padding: 12px;
+        border-radius: 25px;
+    }
+    
+    .login-box h3 {
+        font-size: 18px;
+        margin-bottom: 15px;
+    }
+    
+    .login-box input {
+        padding: 10px 15px;
+        font-size: 12px;
+        margin-top: 10px;
+    }
+    
+    .login-box button {
         padding: 10px;
+        font-size: 14px;
+        margin-top: 15px;
+    }
+    
+    .login-footer {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+    
+    .login-footer a {
+        font-size: 13px;
     }
     
     .pay-box {
@@ -443,7 +701,13 @@ body {
         width: 100px;
         height: 100px;
         margin: 10px auto;
-        font-size: 12px;
+    }
+    
+    .qrcode img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 3px;
     }
     
     .pay-btns button {
