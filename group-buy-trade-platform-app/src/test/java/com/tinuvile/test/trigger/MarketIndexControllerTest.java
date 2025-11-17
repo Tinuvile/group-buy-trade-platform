@@ -2,6 +2,7 @@ package com.tinuvile.test.trigger;
 
 
 import com.alibaba.fastjson.JSON;
+import com.tinuvile.api.IDCCService;
 import com.tinuvile.api.dto.GoodsMarketRequestDTO;
 import com.tinuvile.api.dto.GoodsMarketResponseDTO;
 import com.tinuvile.api.response.Response;
@@ -27,8 +28,17 @@ public class MarketIndexControllerTest {
     @Resource
     private MarketIndexController marketIndexController;
 
+    @Resource
+    private IDCCService dccService;
+
     @Test
-    public void test_queryGroupBuyMarketConfig() {
+    public void test_queryGroupBuyMarketConfig() throws InterruptedException {
+        dccService.updateConfig("downgradeSwitch", "0");
+        dccService.updateConfig("cutRange", "100");
+        dccService.updateConfig("whiteListSwitch", "0");
+
+        Thread.sleep(1000);
+
         GoodsMarketRequestDTO requestDTO = new GoodsMarketRequestDTO();
         requestDTO.setSource("s01");
         requestDTO.setChannel("c01");

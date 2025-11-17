@@ -3,6 +3,7 @@ package com.tinuvile.infrastructure.dao;
 
 import com.tinuvile.infrastructure.dao.po.GroupBuyOrder;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 import java.util.Set;
@@ -29,12 +30,12 @@ public interface IGroupBuyOrderDao {
 
     GroupBuyOrder queryGroupBuyTeamByTeamId(String teamId);
 
-    List<GroupBuyOrder> queryGroupBuyProgressByTeamIds(Set<String> teamIds);
+    List<GroupBuyOrder> queryGroupBuyProgressByTeamIds(@Param("teamIds") Set<String> teamIds);
 
-    Integer queryAllTeamCount(Set<String> teamIds);
+    Integer queryAllTeamCount(@Param("teamIds") Set<String> teamIds);
 
-    Integer queryAllTeamCompleteCount(Set<String> teamIds);
+    Integer queryAllTeamCompleteCount(@Param("teamIds") Set<String> teamIds);
 
-    Integer queryAllUserCount(Set<String> teamIds);
+    Integer queryAllUserCount(@Param("teamIds") Set<String> teamIds);
 
 }
