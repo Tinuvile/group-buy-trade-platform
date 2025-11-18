@@ -3,6 +3,10 @@ package com.tinuvile.infrastructure.dao;
 
 import com.tinuvile.infrastructure.dao.po.GroupBuyOrder;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Tinuvile
@@ -25,5 +29,13 @@ public interface IGroupBuyOrderDao {
     GroupBuyOrder queryGroupBuyProgress(String teamId);
 
     GroupBuyOrder queryGroupBuyTeamByTeamId(String teamId);
+
+    List<GroupBuyOrder> queryGroupBuyProgressByTeamIds(@Param("teamIds") Set<String> teamIds);
+
+    Integer queryAllTeamCount(@Param("teamIds") Set<String> teamIds);
+
+    Integer queryAllTeamCompleteCount(@Param("teamIds") Set<String> teamIds);
+
+    Integer queryAllUserCount(@Param("teamIds") Set<String> teamIds);
 
 }

@@ -8,7 +8,7 @@ import java.util.Map;
 
 /**
  * @author Tinuvile
- * @description
+ * @description 交易结算订单服务接口
  * @since 2025/11/14
  */
 public interface ITradeSettlementOrderService {

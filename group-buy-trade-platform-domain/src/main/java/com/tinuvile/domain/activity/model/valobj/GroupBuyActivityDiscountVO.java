@@ -13,7 +13,7 @@ import java.util.Objects;
 
 /**
  * @author Tinuvile
- * @description
+ * @description 拼团活动营销配置值对象
  * @since 2025/11/3
  */
 @Data
