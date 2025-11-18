@@ -25,6 +25,13 @@ function handleLogin() {
     
     // 模拟登录验证（实际项目中应该调用后端API）
     if (username === 'admin' && password === '123456') {
+        // 保存用户信息
+        userSession.setUserInfo({
+            userId: 'user_' + username,
+            username: username,
+            isTemp: false
+        });
+        
         alert('登录成功！');
         // 登录成功后跳转到首页
         setTimeout(() => {
