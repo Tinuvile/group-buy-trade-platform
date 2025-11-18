@@ -15,10 +15,7 @@ import com.tinuvile.domain.activity.service.IIndexGroupBuyMarketService;
 import com.tinuvile.types.enums.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -41,7 +38,7 @@ public class MarketIndexController implements IMarketIndexService {
 
     @RequestMapping(value = "query_group_buy_market_config", method = RequestMethod.POST)
     @Override
-    public Response<GoodsMarketResponseDTO> queryGroupBuyMarketConfig(GoodsMarketRequestDTO requestDTO) {
+    public Response<GoodsMarketResponseDTO> queryGroupBuyMarketConfig(@RequestBody GoodsMarketRequestDTO requestDTO) {
 
         try {
             log.info("查询拼团营销配置开始:{} goodsId:{}", requestDTO.getUserId(), requestDTO.getGoodsId());
@@ -115,6 +112,7 @@ public class MarketIndexController implements IMarketIndexService {
 
             log.info("查询拼团营销配置完成:{} goodsId:{} response:{}", requestDTO.getUserId(), requestDTO.getGoodsId(), JSON.toJSONString(response));
 
+            return response;
         } catch (Exception e) {
             log.error("查询拼团营销配置失败:{} goodsId:{}", requestDTO.getUserId(), requestDTO.getGoodsId(), e);
             return Response.<GoodsMarketResponseDTO>builder()
@@ -122,7 +120,5 @@ public class MarketIndexController implements IMarketIndexService {
                     .info(ResponseCode.UN_ERROR.getInfo())
                     .build();
         }
-
-        return null;
     }
 }
