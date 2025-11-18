@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1" name="viewport">
+    <title>拼团小商城</title>
+    <link href="./css/index.css" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="main-wrapper">
+    <!-- ===== 顶部轮播图 ===== -->
+    <div class="swiper" id="swiper">
+        <div class="swiper-track" id="swiperTrack">
+            <img src="./images/sku-example-01.webp">
+            <img src="./images/sku-example-02.webp">
+            <img src="./images/sku-example-03.webp">
+        </div>
+        <div class="swiper-dots">
+            <span class="active"></span><span></span><span></span>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 商品信息 -->
+        <div class="title">Liverpool FC x adidas Gazelle third-kit edition</div>
+        <div class="tag">大促优惠 | 直降 ¥60，76人开抢，参与马上抢到</div>
+
+        <!-- 拼单卡片1 -->
+        <div class="group-card">
+            <div class="group-left">
+                <img class="avatar" src="https://picsum.photos/50"/>
+                <div>Tinuvale<br><span style="font-size:12px;color:#999;">拼单即将结束 05:49</span></div>
+            </div>
+            <button class="right-btn" onclick="goToLogin()">立即抢单</button>
+        </div>
+
+        <!-- 拼单卡片2 -->
+        <div class="group-card">
+            <div class="group-left">
+                <img class="avatar" src="https://picsum.photos/51"/>
+                <div>Erchamion<br><span style="font-size:12px;color:#999;">拼单即将结束 05:49</span></div>
+            </div>
+            <button class="right-btn" onclick="goToLogin()">立即抢单</button>
+        </div>
+
+        <!-- 价格 -->
+        <div class="price-area">
+            <div class="price-big">¥100</div>
+            <div class="price-small">¥160</div>
+        </div>
+
+        <div class="btns">
+            <button class="buy-single" onclick="openPay()">单独购买</button>
+            <button class="buy-group" onclick="openPay()">开团购买</button>
+        </div>
+    </div>
+
+
+    <!-- 登录弹窗 -->
+    <div class="mask" id="loginMask">
+        <div class="glass-container" id="glass">
+            <div class="login-box">
+                <h3>欢迎登录 - 拼团小商城</h3>
+                <input id="username" placeholder="用户名">
+                <input id="password" placeholder="密码" type="password">
+                <button onclick="handleLogin()">登录</button>
+                <div class="login-footer">
+                    <a href="#" onclick="closeLogin(); return false;">取消登录</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 支付弹窗 -->
+    <div class="mask" id="payMask">
+        <div class="pay-box">
+            <h3>请扫码支付</h3>
+            <div>支付金额 ¥ 40</div>
+            <div class="qrcode">
+                <img src="./images/QRcode.png" alt="支付二维码" />
+            </div>
+            <div class="pay-btns">
+                <button class="cancel" onclick="closePay()">取消支付</button>
+                <button class="done" onclick="closePay()">支付完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="./js/index.js"></script>
+
+</body>
+</html>
