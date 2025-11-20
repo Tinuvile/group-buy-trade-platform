@@ -1,30 +1,28 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1" name="viewport">
-    <title>用户登录 - 拼团小商城</title>
-    <link href="./css/login.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商城登录</title>
+    <link rel="stylesheet" href="css/login.css">
 </head>
-
 <body>
-
-<!-- 登录弹窗 -->
-<div class="mask" id="loginMask">
-    <div class="glass-container" id="glass">
-        <div class="login-box">
-            <h3>欢迎登录 - 拼团小商城</h3>
-            <input id="username" placeholder="用户名">
-            <input id="password" placeholder="密码" type="password">
-            <button onclick="handleLogin()">登录</button>
-            <div class="login-footer">
-                <a href="./index.html">返回首页</a>
-            </div>
+<div class="container">
+    <form id="loginForm" class="login-form">
+        <h2>欢迎登录 - 小傅哥拼团</h2>
+        <div class="input-group">
+            <input type="text" id="username" required>
+            <label for="username">用户名</label>
         </div>
-    </div>
+        <div class="input-group">
+            <input type="password" id="password" required>
+            <label for="password">密码</label>
+        </div>
+        <button type="submit">登录</button>
+        <p class="error-message" id="errorMessage"></p>
+    </form>
 </div>
-
-<script src="./js/login.js"></script>
-
+<script src="js/login.js"></script>
 </body>
 </html>
+
