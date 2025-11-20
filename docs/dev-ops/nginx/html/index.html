@@ -45,7 +45,7 @@
         <h2>请扫码支付</h2>
         <br/>
         <p id="paymentAmount" style="color:red;"></p>
-        <img src="./images/sku-13811216-04.png" alt="支付二维码" class="qr-code">
+        <img src="./images/QRcode.png" alt="支付二维码" class="qr-code">
         <p id="outTradeNo"></p>
         <div class="button-group">
             <button id="cancelPayment">取消支付</button>
@@ -70,7 +70,7 @@
         let outTradeNo = "";
 
         // 请求接口数据
-        fetch(baseUrl + '/api/v1/gbm/index/query_group_buy_market_config', {
+        fetch(baseUrl + '/api/v1/gbtp/index/query_group_buy_market_config', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -175,7 +175,7 @@
                         };
 
                         // 调用支付接口
-                        fetch(baseUrl + '/api/v1/gbm/trade/lock_market_pay_order', {
+                        fetch(baseUrl + '/api/v1/gbtp/trade/lock_market_pay_order', {
                             method: 'POST',
                             headers: {
                                 'content-type': 'application/json'
@@ -266,7 +266,7 @@
             };
 
             // 调用结算接口
-            fetch(baseUrl + '/api/v1/gbm/trade/settlement_market_pay_order', {
+            fetch(baseUrl + '/api/v1/gbtp/trade/settlement_market_pay_order', {
                 method: 'POST',
                 headers: {
                     'content-type': 'application/json'
