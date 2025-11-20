@@ -1,104 +1,79 @@
-/* ===== 轮播图自动播放 ===== */
-let index = 0;
+function getCookie(name) {
+    let cookieArr = document.cookie.split(";");
+    for(let i = 0; i < cookieArr.length; i++) {
+        let cookiePair = cookieArr[i].split("=");
+        if(name == cookiePair[0].trim()) {
+            return decodeURIComponent(cookiePair[1]);
+        }
+    }
+    return null;
+}
+
+function generateRandomNumber(length) {
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += Math.floor(Math.random() * 10); // 生成 0-9 之间的随机数
+    }
+    return result;
+}
+
+// 轮播图逻辑
+const swiperWrapper = document.querySelector('.swiper-wrapper');
+const pagination = document.querySelector('.swiper-pagination');
+let currentIndex = 0;
+
+// 创建分页点
+for(let i=0; i<3; i++) {
+    const dot = document.createElement('div');
+    dot.className = `swiper-dot${i===0 ? ' active' : ''}`;
+    pagination.appendChild(dot);
+}
+
+// 自动轮播
 setInterval(() => {
-    index = (index + 1) % 3;
-    document.getElementById("swiperTrack").style.transform = `translateX(-${index * 33.33}%)`;
-    document.querySelectorAll(".swiper-dots span").forEach((d, i) => {
-        d.classList.toggle("active", i === index);
+    currentIndex = (currentIndex + 1) % 3;
+    swiperWrapper.style.transform = `translateX(-${currentIndex * 100}%)`;
+    document.querySelectorAll('.swiper-dot').forEach((dot, index) => {
+        dot.className = `swiper-dot${index === currentIndex ? ' active' : ''}`;
     });
 }, 3000);
 
-/* ===== 弹窗控制 ===== */
-function goToLogin() {
-    // 显示登录弹窗而不是跳转
-    document.getElementById("loginMask").style.display = "flex";
-}
-
-function openLogin() {
-    document.getElementById("loginMask").style.display = "flex";
-}
-
-function closeLogin() {
-    document.getElementById("loginMask").style.display = "none";
-    // 清空表单
-    document.getElementById('username').value = '';
-    document.getElementById('password').value = '';
-}
-
-function openPay() {
-    document.getElementById("payMask").style.display = "flex";
-}
-
-function closePay() {
-    document.getElementById("payMask").style.display = "none";
-}
-
-/* ===== 登录处理逻辑 ===== */
-function handleLogin() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    
-    // 基础验证
-    if (!username) {
-        alert('请输入用户名');
-        document.getElementById('username').focus();
-        return;
+// 倒计时逻辑（完整实现）
+class Countdown {
+    constructor(element, initialTime) {
+        this.element = element;
+        this.remaining = this.parseTime(initialTime);
+        this.timer = null;
+        this.start();
     }
-    
-    if (!password) {
-        alert('请输入密码');
-        document.getElementById('password').focus();
-        return;
-    }
-    
-    // 模拟登录验证（实际项目中应该调用后端API）
-    if (username === 'admin' && password === '123456') {
-        alert('登录成功！');
-        closeLogin();
-        // 这里可以添加登录成功后的逻辑
-    } else {
-        alert('用户名或密码错误！');
-        // 清空密码输入框
-        document.getElementById('password').value = '';
-        document.getElementById('password').focus();
-    }
-}
 
-// 键盘事件监听（仅在登录弹窗显示时生效）
-document.addEventListener('keydown', function(event) {
-    const loginMask = document.getElementById('loginMask');
-    if (loginMask && loginMask.style.display === 'flex') {
-        // 按ESC键关闭登录弹窗
-        if (event.key === 'Escape') {
-            closeLogin();
+    parseTime(timeString) {
+        const [hours, minutes, seconds] = timeString.split(':').map(Number);
+        return hours * 3600 + minutes * 60 + seconds;
+    }
+
+    formatTime(seconds) {
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }
+
+    update() {
+        this.remaining--;
+        if (this.remaining <= 0) {
+            this.element.textContent = '00:00:00';
+            this.stop();
+            return;
         }
-        
-        // 按Enter键提交登录
-        if (event.key === 'Enter') {
-            handleLogin();
-        }
+        this.element.textContent = this.formatTime(this.remaining);
     }
-});
 
-// 点击遮罩区域关闭弹窗
-document.addEventListener('DOMContentLoaded', function() {
-    const loginMask = document.getElementById('loginMask');
-    if (loginMask) {
-        loginMask.addEventListener('click', function(event) {
-            // 只有点击遮罩本身（不是登录框）时才关闭弹窗
-            if (event.target === this) {
-                closeLogin();
-            }
-        });
+    start() {
+        this.timer = setInterval(() => this.update(), 1000);
     }
-    
-    const payMask = document.getElementById('payMask');
-    if (payMask) {
-        payMask.addEventListener('click', function(event) {
-            // 只有点击遮罩本身（不是支付框）时才关闭弹窗
-            if (event.target === this) {
-                closePay();
-            }
-        });
+
+    stop() {
+        clearInterval(this.timer);
     }
-});
+}

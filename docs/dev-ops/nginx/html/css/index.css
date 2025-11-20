@@ -1,717 +1,248 @@
-body {
+* {
     margin: 0;
-    font-family: "微软雅黑", sans-serif;
+    padding: 0;
+    box-sizing: border-box;
+}
+body {
     background: #f5f5f5;
+    font-family: Arial, sans-serif;
 }
 
-/* 整体容器限制最大宽度 */
-.main-wrapper {
-    max-width: 800px;
-    margin: 0 auto;
-    background: #fff;
-    box-shadow: 0 0 20px rgba(0,0,0,0.1);
-}
-
-@media (max-width: 800px) {
-    .main-wrapper {
-        box-shadow: none;
-    }
-}
-
-/* 顶部轮播图 */
-.swiper {
-    width: calc(100% - 24px);
-    height: 260px;
+/* 轮播图样式 */
+.swiper-container {
+    width: 100%;
+    height: 375px;
     position: relative;
     overflow: hidden;
-    margin: 30px 12px 0 12px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
-
-.swiper img {
-    width: 33.333%;
-    height: 260px;
-    object-fit: cover;
-    object-position: center;
-    border-radius: 8px;
-    flex-shrink: 0;
-    display: block;
-    min-width: 0;
-}
-
-.swiper-track {
+.swiper-wrapper {
     display: flex;
-    width: 300%;
-    height: 100%;
-    transition: transform .5s ease;
-    align-items: center;
+    transition: transform 0.3s;
 }
-
-.swiper-dots {
-    position: absolute;
-    bottom: 8px;
+.swiper-slide {
+    flex: 0 0 100%;
+    height: 375px;
+}
+.swiper-slide img {
     width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.swiper-pagination {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
-    justify-content: center;
     gap: 6px;
 }
-
-.swiper-dots span {
+.swiper-dot {
     width: 8px;
     height: 8px;
-    background: rgba(255, 255, 255, 0.4);
     border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    transition: all 0.3s;
 }
-
-.swiper-dots .active {
-    background: #fff;
-}
-
-/* 内容区 */
-.container {
-    padding: 12px 12px 20px 12px;
-    margin-top: 20px;
-}
-
-.title {
-    font-size: 24px;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-
-.tag {
-    display: inline-block;
-    background: #ffe37a;
-    color: #9e6800;
-    padding: 6px 10px;
-    font-size: 12px;
+.swiper-dot.active {
+    background: #ff5000;
+    width: 16px;
     border-radius: 4px;
-    margin-bottom: 10px;
+}
+
+/* 商品信息 */
+.product-info {
+    padding: 15px;
+    background: white;
+}
+.product-title {
+    font-size: 18px;
+    color: #333;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+.promotion-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    background: linear-gradient(90deg,#ff5000,#ff8000);
+    color: white;
+    border-radius: 2px;
+    font-size: 12px;
+    margin-right: 8px;
+}
+.promotion-text {
+    font-size: 14px;
+    color: #ff5000;
+    margin: 8px 0;
 }
 
 /* 拼单列表 */
-.group-card {
-    background: #fff;
-    padding: 12px;
-    border-radius: 6px;
-    margin-top: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+.group-list {
+    margin: 15px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
-.group-left {
+.group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+.group-item:last-child {
+    border-bottom: none;
+}
+.group-status {
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+.countdown {
+    color: #ff5000;
+    font-weight: bold;
+}
+.right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+}
+.user-info {
     font-size: 14px;
+    color: #333;
 }
-
-.avatar {
-    width: 32px;
-    height: 32px;
-    border: 2px solid #eee;
-    border-radius: 50%;
+.group-status {
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
 }
-
-.right-btn {
-    background: #ff3f3f;
-    color: #fff;
+.group-btn {
+    background: #ff5000;
+    color: white;
     border: none;
-    border-radius: 4px;
-    padding: 8px 14px;
+    padding: 8px 20px;
+    border-radius: 15px;
     font-size: 14px;
+    cursor: pointer;
+}
+.countdown {
+    font-size: 14px;
+    color: #ff5000;
 }
 
 /* 价格区域 */
-.price-area {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 16px;
+.area {
+    padding: 30px;
+    border-top: 1px solid #eee;
 }
-
-.price-big {
-    color: #ff3f3f;
-    font-size: 22px;
-    font-weight: bold;
-}
-
-.price-small {
+.original-price {
+    font-size: 14px;
     color: #999;
-    font-size: 14px;
     text-decoration: line-through;
+    margin-right: 10px;
 }
-
-.btns {
-    margin-top: 10px;
-    display: flex;
-    gap: 10px;
-}
-
-.btns button {
-    flex: 1;
-    padding: 12px 0;
-    border-radius: 6px;
-    border: none;
-    font-size: 15px;
+.discount-price {
+    font-size: 24px;
+    color: #ff5000;
     font-weight: bold;
 }
 
-.buy-single {
-    background: #ffe8e8;
-    color: #ff3f3f;
-}
-
-.buy-group {
-    background: #ff3f3f;
-    color: #fff;
-}
-
-/* 遮罩 */
-.mask {
+/* 底部操作栏 */
+.action-bar {
     position: fixed;
-    top: 0;
+    bottom: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.45);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    box-sizing: border-box;
-    z-index: 1000;
-}
-
-/* 登录弹窗保持简洁背景 */
-#loginMask {
-    background: rgba(0, 0, 0, 0.6);
-}
-
-
-/* 玻璃容器效果 - 登录弹窗 (简洁黑白色调) */
-.glass-container {
-    width: 90%;
-    max-width: 500px;
-    min-height: 400px;
-    color: white;
+    right: 0;
+    background: white;
+    padding: 10px 15px;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-    border-radius: 40px;
-    backdrop-filter: blur(20px);
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: 
-        rgba(0, 0, 0, 0.2) 0 8px 32px,
-        inset rgba(255,255,255,0.1) 0 1px 0;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-    border-right: 1px solid rgba(0,0,0,0.1);
-    box-sizing: border-box;
+    gap: 10px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
 }
-
-/* 登录弹窗内容 */
-.login-box {
-    background: transparent;
-    width: 100%;
-    max-width: 350px;
-    padding: 0;
-    border-radius: 0;
-    box-shadow: none;
-    box-sizing: border-box;
-    text-align: center;
-}
-
-.login-box h3 {
-    text-align: center;
-    margin-bottom: 30px;
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 24px;
-    font-weight: 300;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.login-box input {
-    width: 100%;
-    padding: 15px 20px;
-    margin-top: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 25px;
-    font-size: 14px;
-    box-sizing: border-box;
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-}
-
-.login-box input::placeholder {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-.login-box input:focus {
-    outline: none;
-    border-color: rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-}
-
-.login-box button {
-    width: 100%;
-    padding: 15px;
-    margin-top: 25px;
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.login-box button:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.login-box button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.login-footer {
-    text-align: center;
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.login-footer a {
-    color: rgba(255, 255, 255, 0.8);
-    text-decoration: none;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-.login-footer a:hover {
-    color: rgba(255, 255, 255, 1);
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-}
-
-/* 支付弹窗 */
-.pay-box {
-    background: #fff;
-    width: 85%;
-    max-width: 400px;
-    padding: 20px;
-    border-radius: 10px;
-    text-align: center;
-    box-sizing: border-box;
-    max-height: 90vh;
-    overflow-y: auto;
-}
-
-.qrcode {
-    width: 160px;
-    height: 160px;
-    margin: 20px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.action-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
     border-radius: 8px;
-    overflow: hidden;
+    font-size: 16px;
+    cursor: pointer;
+}
+.buy-alone {
+    background: #ffece5;
+    color: #ff5000;
+}
+.group-buy {
+    background: linear-gradient(90deg,#ff5000,#ff8000);
+    color: white;
 }
 
-.qrcode img {
+/* 支付弹窗样式 */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.4);
 }
 
-.pay-btns {
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 400px;
+    text-align: center;
+    border-radius: 5px;
+}
+
+.qr-code {
+    width: 200px;
+    height: 200px;
+    margin: 20px 0;
+}
+
+.button-group {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     margin-top: 20px;
 }
 
-.pay-btns button {
-    width: 48%;
-    padding: 12px 0;
-    border-radius: 6px;
+.button-group button {
+    padding: 10px 20px;
     border: none;
-    font-size: 14px;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
-.cancel {
-    background: #eee;
+#cancelPayment {
+    background-color: #f0f0f0;
+    color: #333;
 }
 
-.done {
-    background: #2ebd3f;
+#completePayment {
+    background-color: #4caf50;
     color: white;
 }
 
-/* ===== 响应式媒体查询 ===== */
-
-/* 平板设备 (768px - 1024px) */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .swiper {
-        height: 300px;
-        width: calc(100% - 40px);
-        margin: 35px 20px 0 20px;
-        border-radius: 10px;
-        box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-    }
-    
-    .swiper img {
-        height: 300px;
-        border-radius: 10px;
-    }
-    
-    .glass-container {
-        width: 85%;
-        max-width: 550px;
-        min-height: 420px;
-        padding: 25px;
-        border-radius: 45px;
-    }
-    
-    .login-box h3 {
-        font-size: 26px;
-        margin-bottom: 25px;
-    }
-    
-    .login-box input {
-        padding: 16px 22px;
-        font-size: 14px;
-        margin-top: 16px;
-    }
-    
-    .login-box button {
-        padding: 16px;
-        font-size: 16px;
-        margin-top: 25px;
-    }
-    
-    .container {
-        padding: 20px 20px 25px 20px;
-        margin-top: 25px;
-    }
-    
-    .title {
-        font-size: 18px;
-    }
-    
-    .group-card {
-        padding: 16px;
-    }
-    
-    .btns button {
-        padding: 14px 0;
-        font-size: 16px;
-    }
+/* 空状态提示 */
+.group-item.empty-tips {
+    text-align: center;
+    padding: 20px;
+    background: #f8f8f8;
+    border-radius: 8px;
+    margin: 10px;
 }
 
-/* 桌面设备 (1024px+) */
-@media (min-width: 1024px) {
-    .swiper {
-        height: 320px;
-        width: calc(100% - 60px);
-        margin: 40px 30px 0 30px;
-        border-radius: 12px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    }
-    
-    .swiper img {
-        height: 320px;
-        border-radius: 12px;
-    }
-    
-    .glass-container {
-        width: 85%;
-        max-width: 600px;
-        min-height: 450px;
-        padding: 30px;
-        border-radius: 50px;
-    }
-    
-    .login-box {
-        max-width: 400px;
-    }
-    
-    .login-box h3 {
-        font-size: 28px;
-        margin-bottom: 30px;
-        font-weight: 300;
-    }
-    
-    .login-box input {
-        padding: 18px 25px;
-        font-size: 15px;
-        margin-top: 18px;
-        border-radius: 30px;
-    }
-    
-    .login-box button {
-        padding: 18px;
-        font-size: 17px;
-        margin-top: 30px;
-        border-radius: 30px;
-    }
-    
-    .login-footer {
-        margin-top: 30px;
-        padding-top: 25px;
-    }
-    
-    .login-footer a {
-        font-size: 15px;
-    }
-    
-    .container {
-        padding: 30px 30px 35px 30px;
-        margin-top: 30px;
-    }
-    
-    .title {
-        font-size: 20px;
-        margin-bottom: 15px;
-    }
-    
-    .tag {
-        font-size: 14px;
-        padding: 8px 12px;
-    }
-    
-    .group-card {
-        padding: 20px;
-        margin-top: 16px;
-        border-radius: 8px;
-    }
-    
-    .group-left {
-        font-size: 15px;
-    }
-    
-    .avatar {
-        width: 40px;
-        height: 40px;
-    }
-    
-    .right-btn {
-        padding: 10px 18px;
-        font-size: 15px;
-    }
-    
-    .price-big {
-        font-size: 26px;
-    }
-    
-    .price-small {
-        font-size: 16px;
-    }
-    
-    .btns {
-        margin-top: 15px;
-        gap: 15px;
-    }
-    
-    .btns button {
-        padding: 16px 0;
-        font-size: 17px;
-        border-radius: 8px;
-    }
-}
-
-/* 小屏手机 (最大480px) */
-@media (max-width: 480px) {
-    .swiper {
-        height: 220px;
-        width: calc(100% - 16px);
-        margin: 25px 8px 0 8px;
-        border-radius: 6px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    }
-    
-    .swiper img {
-        height: 220px;
-        border-radius: 6px;
-    }
-    
-    .container {
-        padding: 10px 10px 18px 10px;
-        margin-top: 15px;
-    }
-    
-    .title {
-        font-size: 14px;
-        line-height: 1.4;
-    }
-    
-    .tag {
-        font-size: 11px;
-        padding: 4px 8px;
-    }
-    
-    .group-card {
-        padding: 10px;
-        margin-top: 10px;
-    }
-    
-    .group-left {
-        font-size: 13px;
-        gap: 6px;
-    }
-    
-    .avatar {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .right-btn {
-        padding: 6px 12px;
-        font-size: 13px;
-    }
-    
-    .price-big {
-        font-size: 20px;
-    }
-    
-    .price-small {
-        font-size: 13px;
-    }
-    
-    .btns button {
-        padding: 10px 0;
-        font-size: 14px;
-    }
-    
-    /* 弹窗在小屏幕上的优化 */
-    .mask {
-        padding: 15px;
-    }
-    
-    .glass-container {
-        width: 95%;
-        min-height: 350px;
-        padding: 15px;
-        border-radius: 30px;
-    }
-    
-    .login-box h3 {
-        font-size: 20px;
-        margin-bottom: 20px;
-    }
-    
-    .login-box input {
-        padding: 12px 18px;
-        font-size: 13px;
-        margin-top: 12px;
-    }
-    
-    .login-box button {
-        padding: 12px;
-        font-size: 15px;
-        margin-top: 20px;
-    }
-    
-    .pay-box {
-        width: 95%;
-        padding: 16px;
-        max-height: 85vh;
-    }
-    
-    .qrcode {
-        width: 120px;
-        height: 120px;
-        margin: 12px auto;
-    }
-    
-    .qrcode img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 4px;
-    }
-}
-
-/* 极小屏幕优化 */
-@media (max-width: 320px) {
-    .mask {
-        padding: 8px;
-    }
-    
-    .glass-container {
-        width: 98%;
-        min-height: 300px;
-        padding: 12px;
-        border-radius: 25px;
-    }
-    
-    .login-box h3 {
-        font-size: 18px;
-        margin-bottom: 15px;
-    }
-    
-    .login-box input {
-        padding: 10px 15px;
-        font-size: 12px;
-        margin-top: 10px;
-    }
-    
-    .login-box button {
-        padding: 10px;
-        font-size: 14px;
-        margin-top: 15px;
-    }
-    
-    .login-footer {
-        margin-top: 15px;
-        padding-top: 15px;
-    }
-    
-    .login-footer a {
-        font-size: 13px;
-    }
-    
-    .pay-box {
-        width: 98%;
-        padding: 12px;
-        max-height: 80vh;
-    }
-    
-    .pay-box h3 {
-        font-size: 16px;
-        margin-bottom: 10px;
-    }
-    
-    .qrcode {
-        width: 100px;
-        height: 100px;
-        margin: 10px auto;
-    }
-    
-    .qrcode img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 3px;
-    }
-    
-    .pay-btns button {
-        padding: 8px 0;
-        font-size: 12px;
-    }
+.tips-content {
+    color: #666;
+    font-size: 14px;
+    letter-spacing: 1px;
 }
